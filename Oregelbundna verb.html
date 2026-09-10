@@ -12,7 +12,7 @@
         <!-- Header -->
         <header class="mb-8 border-b border-slate-700 pb-6 text-center">
             <span class="inline-block px-3 py-1 bg-amber-500/20 text-amber-400 text-xs font-semibold tracking-wide uppercase rounded-full mb-2">Presens & Verbkorsord</span>
-            <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">🇪🇸 Oregelbundna Verb & Utryck</h1>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">🇪🇸 Oregelbundna Verb & Uttryck</h1>
             <p class="text-slate-400 text-sm md:text-base">Träna på <i>ser, tener, ir, estar</i> och diftongerande verb. Fyll i rätt form på spanska!</p>
         </header>
 
@@ -214,12 +214,17 @@
             document.getElementById('score-display').textContent = `${totalCorrect} / 11 avklarade`;
         }
 
-        // Auto-check on live typing
+        // Auto-check on live typing & Block paste
         document.querySelectorAll('.verb-in').forEach(input => {
             input.addEventListener('keyup', (e) => {
                 if (e.key === 'Enter') {
                     checkAll();
                 }
+            });
+
+            // Hindrar eleverna från att klistra in text
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
             });
         });
     </script>
