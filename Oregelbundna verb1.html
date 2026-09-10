@@ -284,7 +284,7 @@
                     e.target.classList.add('shake-warning');
                     setTimeout(() => e.target.classList.remove('shake-warning'), 500);
 
-                    showToast("⛔ Ingen fusk! Du får inte klistra in svar. Du måste skriva själv.");
+                    showToast("⛔ Inget fusk! Du får inte klistra in svar. Du måste skriva själv.");
                 }
             }, true);
         }
@@ -313,27 +313,27 @@
                 <div class="space-y-2.5 text-xs">
                     <div>
                         <span class="font-bold block mb-1">1. Yo (ser) __________ estudiante de español.</span>
-                        <input type="text" id="bv1" placeholder="t.ex. soy" class="w-full p-2 border rounded">
+                        <input type="text" id="bv1" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">2. Tú (ir) __________ al colegio en autobús.</span>
-                        <input type="text" id="bv2" placeholder="t.ex. vas" class="w-full p-2 border rounded">
+                        <input type="text" id="bv2" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">3. Ella (estar) __________ muy contenta hoy.</span>
-                        <input type="text" id="bv3" placeholder="t.ex. está" class="w-full p-2 border rounded">
+                        <input type="text" id="bv3" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">4. Nosotros (tener) __________ dos perros.</span>
-                        <input type="text" id="bv4" placeholder="t.ex. tenemos" class="w-full p-2 border rounded">
+                        <input type="text" id="bv4" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">5. Ellos (ir) __________ a la playa los fines de semana.</span>
-                        <input type="text" id="bv5" placeholder="t.ex. van" class="w-full p-2 border rounded">
+                        <input type="text" id="bv5" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">6. Yo (tener) __________ 16 años.</span>
-                        <input type="text" id="bv6" placeholder="t.ex. tengo" class="w-full p-2 border rounded">
+                        <input type="text" id="bv6" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <button onclick="checkBasicVerbs('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta basverb</button>
                     <p id="bvRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
@@ -353,7 +353,7 @@
                 completeTask(taskId, points);
             } else {
                 const res = document.getElementById('bvRes');
-                res.innerText = "Något svar blev fel. Facit-ledtråd: soy, vas, está, tenemos, van, tengo";
+                res.innerText = "Något svar blev fel. Tänk på hur ser, ir, estar och tener böjs!";
                 res.classList.remove('hidden');
             }
         }
@@ -365,23 +365,23 @@
                 <div class="space-y-2.5 text-xs">
                     <div>
                         <span class="font-bold block mb-1">1. Yo (querer e->ie) __________ comer tacos.</span>
-                        <input type="text" id="boot1" placeholder="t.ex. quiero" class="w-full p-2 border rounded">
+                        <input type="text" id="boot1" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">2. Él (poder o->ue) __________ hablar español fluidamente.</span>
-                        <input type="text" id="boot2" placeholder="t.ex. puede" class="w-full p-2 border rounded">
+                        <input type="text" id="boot2" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">3. Nosotros (jugar u->ue) __________ al fútbol los martes.</span>
-                        <input type="text" id="boot3" placeholder="t.ex. jugamos" class="w-full p-2 border rounded">
+                        <input type="text" id="boot3" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">4. ¿Tú (preferir e->ie) __________ té o café?</span>
-                        <input type="text" id="boot4" placeholder="t.ex. prefieres" class="w-full p-2 border rounded">
+                        <input type="text" id="boot4" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">5. Ellos (dormir o->ue) __________ ocho horas cada noche.</span>
-                        <input type="text" id="boot5" placeholder="t.ex. duermen" class="w-full p-2 border rounded">
+                        <input type="text" id="boot5" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <button onclick="checkBootVerbs('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta diftongering</button>
                     <p id="bootRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
@@ -399,7 +399,7 @@
                 completeTask(taskId, points);
             } else {
                 const res = document.getElementById('bootRes');
-                res.innerText = "Kolla extra noga på diftongeringen! Kom ihåg att 'nosotros jugamos' inte diftongerar.";
+                res.innerText = "Kolla extra noga på diftongeringen! Kom ihåg att 'nosotros' inte diftongerar.";
                 res.classList.remove('hidden');
             }
         }
@@ -411,23 +411,23 @@
                 <div class="space-y-2.5 text-xs">
                     <div>
                         <span class="font-bold block mb-1">1. Hacer (Jag gör) = Yo __________</span>
-                        <input type="text" id="go1" placeholder="t.ex. hago" class="w-full p-2 border rounded">
+                        <input type="text" id="go1" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">2. Salir (Jag går ut) = Yo __________</span>
-                        <input type="text" id="go2" placeholder="t.ex. salgo" class="w-full p-2 border rounded">
+                        <input type="text" id="go2" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">3. Poner (Jag sätter/ställer) = Yo __________</span>
-                        <input type="text" id="go3" placeholder="t.ex. pongo" class="w-full p-2 border rounded">
+                        <input type="text" id="go3" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">4. Traer (Jag hämtar/tar med) = Yo __________</span>
-                        <input type="text" id="go4" placeholder="t.ex. traigo" class="w-full p-2 border rounded">
+                        <input type="text" id="go4" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">5. Decir (Jag säger) = Yo __________</span>
-                        <input type="text" id="go5" placeholder="t.ex. digo" class="w-full p-2 border rounded">
+                        <input type="text" id="go5" placeholder="Skriv svaret här..." class="w-full p-2 border rounded">
                     </div>
                     <button onclick="checkGoVerbs('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta GO-verb</button>
                     <p id="goRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
@@ -445,7 +445,7 @@
                 completeTask(taskId, points);
             } else {
                 const res = document.getElementById('goRes');
-                res.innerText = "Felaktig form! Tips: hago, salgo, pongo, traigo, digo";
+                res.innerText = "Något verb stämmer inte. Tänk på -go ändelsen i jag-form!";
                 res.classList.remove('hidden');
             }
         }
@@ -457,23 +457,23 @@
                 <div class="space-y-2.5 text-xs">
                     <div>
                         <span class="font-bold block mb-1">1. "Jag är hungrig" (tener + hambre)</span>
-                        <input type="text" id="exp1" placeholder="t.ex. tengo hambre" class="w-full p-2 border rounded">
+                        <input type="text" id="exp1" placeholder="Skriv på spanska..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">2. "Hon fryser / känner sig kall" (tener + frío)</span>
-                        <input type="text" id="exp2" placeholder="t.ex. tiene frío" class="w-full p-2 border rounded">
+                        <input type="text" id="exp2" placeholder="Skriv på spanska..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">3. "Vi har bråttom" (tener + prisa)</span>
-                        <input type="text" id="exp3" placeholder="t.ex. tenemos prisa" class="w-full p-2 border rounded">
+                        <input type="text" id="exp3" placeholder="Skriv på spanska..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">4. "Är du trött?" (estar + cansado/a)</span>
-                        <input type="text" id="exp4" placeholder="t.ex. estás cansado / estás cansada" class="w-full p-2 border rounded">
+                        <input type="text" id="exp4" placeholder="Skriv på spanska..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">5. "De är rädda" (tener + miedo)</span>
-                        <input type="text" id="exp5" placeholder="t.ex. tienen miedo" class="w-full p-2 border rounded">
+                        <input type="text" id="exp5" placeholder="Skriv på spanska..." class="w-full p-2 border rounded">
                     </div>
                     <button onclick="checkExpressions('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta uttryck</button>
                     <p id="expRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
@@ -491,7 +491,7 @@
                 completeTask(taskId, points);
             } else {
                 const res = document.getElementById('expRes');
-                res.innerText = "Något uttryck blev fel. Kontrollera verbböjningen (tengo, tiene, tenemos, estás, tienen)!";
+                res.innerText = "Något uttryck blev fel. Kontrollera verbböjningen noggrant!";
                 res.classList.remove('hidden');
             }
         }
@@ -503,19 +503,19 @@
                 <div class="space-y-2.5 text-xs">
                     <div>
                         <span class="font-bold block mb-1">1. Yo (spela) __________ al fútbol esta tarde.</span>
-                        <input type="text" id="nf1" placeholder="t.ex. voy a jugar" class="w-full p-2 border rounded">
+                        <input type="text" id="nf1" placeholder="Skriv hela frasen..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">2. Mis amigos (äta) __________ tacos el viernes.</span>
-                        <input type="text" id="nf2" placeholder="t.ex. van a comer" class="w-full p-2 border rounded">
+                        <input type="text" id="nf2" placeholder="Skriv hela frasen..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">3. ¿Tú (plugga) __________ hoy para el examen?</span>
-                        <input type="text" id="nf3" placeholder="t.ex. vas a estudiar" class="w-full p-2 border rounded">
+                        <input type="text" id="nf3" placeholder="Skriv hela frasen..." class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <span class="font-bold block mb-1">4. Nosotros (resa) __________ a España en verano.</span>
-                        <input type="text" id="nf4" placeholder="t.ex. vamos a viajar" class="w-full p-2 border rounded">
+                        <input type="text" id="nf4" placeholder="Skriv hela frasen..." class="w-full p-2 border rounded">
                     </div>
                     <button onclick="checkNearFuture('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta Ir a + inf</button>
                     <p id="nfRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
@@ -537,42 +537,38 @@
             }
         }
 
-        // 6. Textdetektiven Verb (20p)
+        // 6. Verb-detektiven (20p)
         function renderErrorDetectiveVerbs(container, task) {
             container.innerHTML = `
-                <p class="text-sm text-slate-600 mb-2">Hitta verbfelen och <b>skriv om hela meningarna helt korrekt på spanska</b>:</p>
-                <div class="space-y-3 text-xs">
-                    <div class="p-2.5 bg-rose-50 border border-rose-200 rounded">
-                        <p class="font-bold text-rose-800 mb-1">Fel 1: "Yo tener mucho dinero y yo ir al cine."</p>
-                        <input type="text" id="edv1" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                <p class="text-sm text-slate-600 mb-3">Hitta felet i meningarna och skriv hela meningen korrekt på spanska:</p>
+                <div class="space-y-2.5 text-xs">
+                    <div>
+                        <span class="font-bold block mb-1">1. "Ella tener mucha hambre."</span>
+                        <input type="text" id="err1" placeholder="Skriv hela meningen korrekt..." class="w-full p-2 border rounded">
                     </div>
-                    <div class="p-2.5 bg-rose-50 border border-rose-200 rounded">
-                        <p class="font-bold text-rose-800 mb-1">Fel 2: "Nosotros podenos jugar pero ellos quierer dormir."</p>
-                        <input type="text" id="edv2" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                    <div>
+                        <span class="font-bold block mb-1">2. "Nosotros juegamos al fútbol el sábado."</span>
+                        <input type="text" id="err2" placeholder="Skriv hela meningen korrekt..." class="w-full p-2 border rounded">
                     </div>
-                    <div class="p-2.5 bg-rose-50 border border-rose-200 rounded">
-                        <p class="font-bold text-rose-800 mb-1">Fel 3: "Ella es en la escuela porque es enferma hoy."</p>
-                        <input type="text" id="edv3" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                    <div>
+                        <span class="font-bold block mb-1">3. "Ellos va a la playa hoy."</span>
+                        <input type="text" id="err3" placeholder="Skriv hela meningen korrekt..." class="w-full p-2 border rounded">
                     </div>
-                    <button onclick="checkErrorDetectiveVerbs('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta meningarna</button>
-                    <p id="edvRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                    <button onclick="checkErrorDetective('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta meningar</button>
+                    <p id="errRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
                 </div>
             `;
         }
-        function checkErrorDetectiveVerbs(taskId, points) {
-            const v1 = norm(document.getElementById('edv1').value);
-            const v2 = norm(document.getElementById('edv2').value);
-            const v3 = norm(document.getElementById('edv3').value);
+        function checkErrorDetective(taskId, points) {
+            const r1 = norm(document.getElementById('err1').value) === 'ella tiene mucha hambre';
+            const r2 = norm(document.getElementById('err2').value) === 'nosotros jugamos al fútbol el sábado' || norm(document.getElementById('err2').value) === 'nosotros jugamos al futbol el sabado';
+            const r3 = norm(document.getElementById('err3').value) === 'ellos van a la playa hoy';
 
-            const isV1 = v1.includes('tengo') && v1.includes('voy');
-            const isV2 = v2.includes('podemos') && v2.includes('quieren');
-            const isV3 = v3.includes('está en la escuela') && v3.includes('está enferma');
-
-            if (isV1 && isV2 && isV3) {
+            if (r1 && r2 && r3) {
                 completeTask(taskId, points);
             } else {
-                const res = document.getElementById('edvRes');
-                res.innerText = "Något fel kvarstår! Tips: tener->tengo, ir->voy, podenos->podemos, quierer->quieren, es en/es enferma->está en/está enferma.";
+                const res = document.getElementById('errRes');
+                res.innerText = "Tänk på verbformerna! (tener -> tiene, jugar -> jugamos, ir -> van)";
                 res.classList.remove('hidden');
             }
         }
@@ -580,137 +576,131 @@
         // 7. Ser vs. Estar (20p)
         function renderSerVsEstarQuiz(container, task) {
             container.innerHTML = `
-                <p class="text-sm text-slate-600 mb-3">Fyll i rätt form av <b>ser</b> eller <b>estar</b> utifrån kontexten:</p>
+                <p class="text-sm text-slate-600 mb-3">Välj och skriv rätt form av <b>ser</b> eller <b>estar</b>:</p>
                 <div class="space-y-2.5 text-xs">
                     <div>
-                        <span class="font-bold block mb-1">1. Madrid __________ la capital de España. (Permanent fakta)</span>
-                        <input type="text" id="se1" placeholder="es / está" class="w-full p-2 border rounded">
+                        <span class="font-bold block mb-1">1. Madrid __________ en España. (Plats)</span>
+                        <input type="text" id="se1" placeholder="Skriv rätt verbform..." class="w-full p-2 border rounded">
                     </div>
                     <div>
-                        <span class="font-bold block mb-1">2. Hoy mi hermano __________ enfermo en la cama. (Tillstånd/Hälsa)</span>
-                        <input type="text" id="se2" placeholder="es / está" class="w-full p-2 border rounded">
+                        <span class="font-bold block mb-1">2. Mis amigos __________ muy simpáticos. (Egenskap)</span>
+                        <input type="text" id="se2" placeholder="Skriv rätt verbform..." class="w-full p-2 border rounded">
                     </div>
                     <div>
-                        <span class="font-bold block mb-1">3. Mis padres __________ profesores de español. (Yrke)</span>
-                        <input type="text" id="se3" placeholder="son / están" class="w-full p-2 border rounded">
+                        <span class="font-bold block mb-1">3. ¿Cómo __________ tú hoy? (Mående)</span>
+                        <input type="text" id="se3" placeholder="Skriv rätt verbform..." class="w-full p-2 border rounded">
                     </div>
                     <div>
-                        <span class="font-bold block mb-1">4. ¿Dónde __________ tus llaves? (Plats)</span>
-                        <input type="text" id="se4" placeholder="son / están" class="w-full p-2 border rounded">
+                        <span class="font-bold block mb-1">4. Mi hermano __________ enfermo esta semana. (Tillstånd)</span>
+                        <input type="text" id="se4" placeholder="Skriv rätt verbform..." class="w-full p-2 border rounded">
                     </div>
-                    <div>
-                        <span class="font-bold block mb-1">5. La fiesta __________ muy divertida. (Egenskap)</span>
-                        <input type="text" id="se5" placeholder="es / está" class="w-full p-2 border rounded">
-                    </div>
-                    <button onclick="checkSerVsEstar('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta Ser vs. Estar</button>
+                    <button onclick="checkSerVsEstar('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Rätta Ser/Estar</button>
                     <p id="seRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
                 </div>
             `;
         }
         function checkSerVsEstar(taskId, points) {
-            const s1 = norm(document.getElementById('se1').value) === 'es';
-            const s2 = ['está', 'esta'].includes(norm(document.getElementById('se2').value));
-            const s3 = norm(document.getElementById('se3').value) === 'son';
-            const s4 = ['están', 'estan'].includes(norm(document.getElementById('se4').value));
-            const s5 = norm(document.getElementById('se5').value) === 'es';
+            const c1 = ['está', 'esta'].includes(norm(document.getElementById('se1').value));
+            const c2 = norm(document.getElementById('se2').value) === 'son';
+            const c3 = ['estás', 'estas'].includes(norm(document.getElementById('se3').value));
+            const c4 = ['está', 'esta'].includes(norm(document.getElementById('se4').value));
 
-            if (s1 && s2 && s3 && s4 && s5) {
+            if (c1 && c2 && c3 && c4) {
                 completeTask(taskId, points);
             } else {
                 const res = document.getElementById('seRes');
-                res.innerText = "Kom ihåg: SER = Egenskap, Yrke, Ursprung, Identitet. ESTAR = Plats, Tillstånd, Mående!";
+                res.innerText = "Kom ihåg: ESTAR för befintlighet/mående, SER för permanenta egenskaper!";
                 res.classList.remove('hidden');
             }
         }
 
-        // 8. Interaktiv Verb-chatt (30p)
+        // 8. Interaktiv Chatt (30p)
         function renderChatSimVerbs(container, task) {
             container.innerHTML = `
-                <p class="text-sm text-slate-600 mb-2">Svara på din spanskatalande kompis Mateo i chatten. Använd oregelbundna verb i dina svar!</p>
+                <p class="text-sm text-slate-600 mb-3">Svara i chatten med rätt böjt verb:</p>
                 <div class="space-y-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <!-- Chat 1 -->
-                    <div class="flex gap-2 items-start">
-                        <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">M</div>
-                        <div class="bg-indigo-100 p-2.5 rounded-2xl rounded-tl-none text-slate-800">
-                            <b>Mateo:</b> ¡Hola! ¿Qué vas a hacer este fin de semana?
-                        </div>
+                    <div class="bg-indigo-100 p-2.5 rounded-lg max-w-[85%] text-indigo-900">
+                        <b>Amigo:</b> ¡Hola! ¿A qué hora (salir) __________ tú de la escuela hoy?
                     </div>
-                    <input type="text" id="chatAns1" placeholder="Svara t.ex.: Voy a estudiar y voy a salir con mis amigos..." class="w-full p-2 border rounded-lg bg-white">
-
-                    <!-- Chat 2 -->
-                    <div class="flex gap-2 items-start">
-                        <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">M</div>
-                        <div class="bg-indigo-100 p-2.5 rounded-2xl rounded-tl-none text-slate-800">
-                            <b>Mateo:</b> ¿Tienes hambre ahora o prefieres comer más tarde?
-                        </div>
+                    <div>
+                        <input type="text" id="cs1" placeholder="Svara med rätt form av salir..." class="w-full p-2 border rounded">
                     </div>
-                    <input type="text" id="chatAns2" placeholder="Svara t.ex.: Tengo mucha hambre, quiero comer ahora..." class="w-full p-2 border rounded-lg bg-white">
-
-                    <button onclick="submitChatSimVerbs('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">Skicka svar i chatten</button>
-                    <p id="chatErr" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                    <div class="bg-indigo-100 p-2.5 rounded-lg max-w-[85%] text-indigo-900">
+                        <b>Amigo:</b> Yo (hacer) __________ mis deberes a las cinco. ¿Y tú?
+                    </div>
+                    <div>
+                        <input type="text" id="cs2" placeholder="Svara med rätt form av hacer..." class="w-full p-2 border rounded">
+                    </div>
+                    <div class="bg-indigo-100 p-2.5 rounded-lg max-w-[85%] text-indigo-900">
+                        <b>Amigo:</b> ¿Qué (querer) __________ hacer este fin de semana?
+                    </div>
+                    <div>
+                        <input type="text" id="cs3" placeholder="Svara med rätt form av querer..." class="w-full p-2 border rounded">
+                    </div>
+                    <button onclick="checkChatSim('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2">Skicka chatt-svar</button>
+                    <p id="csRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
                 </div>
             `;
         }
-        function submitChatSimVerbs(taskId, points) {
-            const c1 = norm(document.getElementById('chatAns1').value);
-            const c2 = norm(document.getElementById('chatAns2').value);
+        function checkChatSim(taskId, points) {
+            const v1 = norm(document.getElementById('cs1').value) === 'sales' || norm(document.getElementById('cs1').value) === 'salgo';
+            const v2 = norm(document.getElementById('cs2').value) === 'hago';
+            const v3 = norm(document.getElementById('cs3').value) === 'quieres' || norm(document.getElementById('cs3').value) === 'quiero';
 
-            const hasFut1 = c1.includes('voy a') || c1.includes('quiero') || c1.includes('tengo que');
-            const hasExp2 = c2.includes('tengo') || c2.includes('prefiero') || c2.includes('quiero');
-
-            if (c1.length >= 15 && c2.length >= 15 && hasFut1 && hasExp2) {
+            if (v1 && v2 && v3) {
                 completeTask(taskId, points);
             } else {
-                const err = document.getElementById('chatErr');
-                err.innerText = "Skriv fylligare svar! Använd verb som 'voy a...', 'tengo...', 'quiero...' eller 'prefiero...'.";
-                err.classList.remove('hidden');
+                const res = document.getElementById('csRes');
+                res.innerText = "Kolla verbformerna i dialogen (salir, hacer, querer)!";
+                res.classList.remove('hidden');
             }
         }
 
         // 9. Helgplaneraren (30p)
         function renderWriteWeekend(container, task) {
             container.innerHTML = `
-                <p class="text-sm text-slate-600 mb-2">Skriv en text (minst 60 tecken) om vad du vill och ska göra i helgen. Använd minst 3 av verben: <i>voy a</i>, <i>quiero</i>, <i>puedo</i>, <i>tengo que</i>, <i>hago</i>, <i>salgo</i>:</p>
-                <textarea id="weekendText" rows="5" placeholder="Este fin de semana voy a descansar mucho. Quiero jugar a los videojuegos con mis amigos y tengo que estudiar español. El sábado salgo con mi familia..." class="w-full p-2.5 border rounded-lg text-xs mb-2"></textarea>
-                <button onclick="submitWriteWeekend('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">Lämna in helgplanerna (+30p)</button>
-                <p id="weekendErr" class="text-xs text-rose-600 font-bold hidden mt-1 text-center"></p>
+                <p class="text-sm text-slate-600 mb-2">Skriv en kort text på spanska (minst 15 ord) om vad du vill och ska göra i helgen.</p>
+                <p class="text-xs text-indigo-600 font-semibold mb-3">Använd gärna: <i>voy a, quiero, vamos a, tengo que...</i></p>
+                <textarea id="weekendText" rows="4" class="w-full p-2.5 border rounded-xl text-xs mb-2 outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Skriv din text på spanska här..."></textarea>
+                <button onclick="checkWriteWeekend('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">Lämna in text</button>
+                <p id="wRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
             `;
         }
-        function submitWriteWeekend(taskId, points) {
-            const txt = norm(document.getElementById('weekendText').value);
-            const err = document.getElementById('weekendErr');
+        function checkWriteWeekend(taskId, points) {
+            const txt = document.getElementById('weekendText').value.trim();
+            const words = txt.split(/\s+/).filter(w => w.length > 0);
+            const lower = txt.toLowerCase();
+            const hasVerbs = ['voy', 'quiero', 'vamos', 'va', 'tengo'].some(v => lower.includes(v));
 
-            const verbCount = ['voy a', 'quiero', 'puedo', 'tengo', 'hago', 'salgo', 'voy'].filter(v => txt.includes(v)).length;
-
-            if (txt.length >= 60 && verbCount >= 2) {
+            if (words.length >= 12 && hasVerbs) {
                 completeTask(taskId, points);
             } else {
-                err.innerText = "Skriv minst 60 tecken och inkludera minst 2 av verben (voy a, quiero, puedo, tengo que, hago, salgo)!";
-                err.classList.remove('hidden');
+                const res = document.getElementById('wRes');
+                res.innerText = "Skriv lite längre (minst 12 ord) och använd verb som voy, quiero, vamos eller tengo!";
+                res.classList.remove('hidden');
             }
         }
 
-        // 10. Miniberättelse "Un día normal" (30p)
+        // 10. Miniberättelse (30p)
         function renderWriteStory(container, task) {
             container.innerHTML = `
-                <p class="text-sm text-slate-600 mb-2">Skriv en berättelse om en vanlig dag (minst 80 tecken). Använd minst 4 olika oregelbundna verb i din text (t.ex. <i>soy, tengo, voy, hago, salgo, puedo, quiero, estoy</i>):</p>
-                <textarea id="storyText" rows="6" placeholder="Por la mañana tengo mucho sueño. Voy al colegio a las ocho. En la escuela estoy con mis amigos y hago muchas cosas. Por la tarde salgo a pasear y quiero descansar..." class="w-full p-2.5 border rounded-lg text-xs mb-2"></textarea>
-                <button onclick="submitWriteStory('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">Lämna in berättelsen (+30p)</button>
-                <p id="storyErr" class="text-xs text-rose-600 font-bold hidden mt-1 text-center"></p>
+                <p class="text-sm text-slate-600 mb-2">Skriv en miniberättelse om en vanlig dag "Un día normal" (minst 20 ord).</p>
+                <p class="text-xs text-indigo-600 font-semibold mb-3">Försök använda minst 3 oregelbundna verb (t.ex. <i>tengo, voy, hago, salgo, puedo, quiero</i>).</p>
+                <textarea id="storyText" rows="5" class="w-full p-2.5 border rounded-xl text-xs mb-2 outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Skriv din berättelse på spanska här..."></textarea>
+                <button onclick="checkWriteStory('${task.id}', ${task.points})" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">Lämna in berättelse</button>
+                <p id="sRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
             `;
         }
-        function submitWriteStory(taskId, points) {
-            const txt = norm(document.getElementById('storyText').value);
-            const err = document.getElementById('storyErr');
-
-            const verbList = ['soy', 'tengo', 'voy', 'hago', 'salgo', 'puedo', 'quiero', 'estoy', 'tiene', 'va', 'hace', 'puede', 'quiere', 'está'];
-            const foundVerbs = verbList.filter(v => txt.includes(v));
-
-            if (txt.length >= 80 && foundVerbs.length >= 3) {
+        function checkWriteStory(taskId, points) {
+            const txt = document.getElementById('storyText').value.trim();
+            const words = txt.split(/\s+/).filter(w => w.length > 0);
+            
+            if (words.length >= 18) {
                 completeTask(taskId, points);
             } else {
-                err.innerText = "Skriv minst 80 tecken och använd minst 3 olika oregelbundna verb (t.ex. tengo, voy, hago, salgo, quiero, estoy)!";
-                err.classList.remove('hidden');
+                const res = document.getElementById('sRes');
+                res.innerText = "Skriv lite mer! Berättelsen bör vara minst 18-20 ord lång.";
+                res.classList.remove('hidden');
             }
         }
     </script>
