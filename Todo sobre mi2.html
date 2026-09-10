@@ -30,7 +30,7 @@
             <div class="flex items-center gap-3">
                 <input type="text" id="studentName" placeholder="Ditt namn..." class="px-3 py-1.5 rounded-lg text-slate-800 text-sm font-medium border-none focus:ring-2 focus:ring-teal-300 outline-none shadow-inner" oninput="saveName()">
                 <button onclick="resetProgress()" class="text-xs bg-teal-800 hover:bg-teal-900 text-teal-200 px-2.5 py-1.5 rounded transition" title="Nollställ poäng">
-                    <i class="fa-solid fa-rotate-left"></i>
+                    <i class="fa-solid fa-rotate-left"></i> Nollställ
                 </button>
             </div>
         </div>
@@ -120,11 +120,13 @@
     </div>
 
     <script>
-        // BLOCKERA INKLISTRING I HELA DOKUMENTET
+        // TOTAL BLOCKERING AV INKLISTRING
         document.addEventListener('paste', (e) => {
             e.preventDefault();
-            alert('Det är inte tillåtet att klistra in text! Du måste skriva din text själv.');
-        });
+            alert('Det är inte tillåtet att klistra in text! Du måste skriva dina svar själv.');
+        }, true);
+
+        const STORAGE_KEY = 'es_repaso_state_v5'; // Ny nyckel för ren återställning
 
         const tasks = [
             { id: 'task1', color: 'green', points: 10, title: '1. Fasta vardagsuttryck', desc: 'Koppla samman 8 spanska uttryck med svensk översättning.', type: 'quiz_phrases' },
@@ -137,7 +139,7 @@
             { id: 'task8', color: 'red', points: 30, title: '8. Kompisintervjun (Skriv själv)', desc: 'Skriv dina egna meingssvar i intervjuchatten.', type: 'chat_sim' },
             { id: 'task9', color: 'red', points: 30, title: '9. Jämförande affisch', desc: 'Skriv manuset till en affisch om dig och en vän.', type: 'poster_builder' },
             { id: 'task10', color: 'red', points: 30, title: '10. Presentar a una celebridad', desc: 'Skriv en utförlig kändispresentation på spanska.', type: 'write_celebrity' },
-            { id: 'task11', color: 'red', points: 40, title: '11. Gran presentación personal (250 ord)', desc: 'Skriv en djupgående och utförlig presentation om dig själv.', type: 'write_self_long' }
+            { id: 'task11', color: 'red', points: 40, title: '11. Gran presentación personal (250 ord)', desc: 'Skriv en djupgående presentation om dig själv.', type: 'write_self_long' }
         ];
 
         let state = { points: 0, completed: {}, studentName: '' };
@@ -145,15 +147,21 @@
         window.onload = () => { loadState(); renderTasks(); updateUI(); };
 
         function loadState() {
-            const saved = localStorage.getItem('es_repaso_state_v3');
+            const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
-                state = JSON.parse(saved);
-                document.getElementById('studentName').value = state.studentName || '';
+                try {
+                    state = JSON.parse(saved);
+                    document.getElementById('studentName').value = state.studentName || '';
+                } catch (e) {
+                    state = { points: 0, completed: {}, studentName: '' };
+                }
+            } else {
+                state = { points: 0, completed: {}, studentName: '' };
             }
         }
 
         function saveState() {
-            localStorage.setItem('es_repaso_state_v3', JSON.stringify(state));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
 
         function saveName() {
@@ -162,9 +170,8 @@
         }
 
         function resetProgress() {
-            if (confirm("Vill du nollställa alla dina poäng?")) {
-                state.points = 0;
-                state.completed = {};
+            if (confirm("Vill du nollställa alla dina poäng och återställa alla uppgifter?")) {
+                state = { points: 0, completed: {}, studentName: state.studentName || '' };
                 saveState();
                 renderTasks();
                 updateUI();
@@ -197,7 +204,7 @@
             greenContainer.innerHTML = ''; yellowContainer.innerHTML = ''; redContainer.innerHTML = '';
 
             tasks.forEach(task => {
-                const isDone = state.completed[task.id];
+                const isDone = !!state.completed[task.id];
                 const card = document.createElement('div');
                 card.className = `task-card bg-white p-4 rounded-xl border ${isDone ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'} shadow-sm flex flex-col justify-between`;
                 let badgeColor = task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
