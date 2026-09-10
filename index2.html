@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lektionsportal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 p-6 min-h-screen font-sans">
+    <div class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">📚 Lektioner</h1>
+        <p class="text-sm text-slate-500 mb-6">Klicka på en övning för att starta:</p>
+        
+        <div id="lesson-list" class="space-y-3">
+            <p class="text-sm text-slate-400 animate-pulse">Hämtar lektioner...</p>
+        </div>
+    </div>
+
+    <script>
+        // Läser av användarnamn och repository-namn automatiskt från webbadressen
+        let owner = window.location.hostname.split('.')[0];
+        let repo = window.location.pathname.split('/').filter(Boolean)[0];
+
+        // Reserv om filen öppnas lokalt på datorn i stället för via GitHub Pages
+        if (!window.location.hostname.includes('github.io')) {
+            owner = 'dt848-dev'; 
+            repo = 'Spanska';
+        }
+
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/`;
+
+        fetch(apiUrl)
+            .then(res => res.json())
+            .then(files => {
+                const listContainer = document.getElementById('lesson-list');
+                listContainer.innerHTML = '';
+
+                if (!Array.isArray(files)) {
+                    throw new Error('Kunde inte läsa repository-innehåll');
+                }
+
+                const htmlFiles = files.filter(file => file.name.endsWith('.html') && file.name !== 'index.html');
+
+                if (htmlFiles.length === 0) {
+                    listContainer.innerHTML = '<p class="text-sm text-slate-500">Inga lektioner hittades i detta repository.</p>';
+                    return;
+                }
+
+                htmlFiles.forEach(file => {
+                    const cleanName = file.name.replace('.html', '');
+                    const a = document.createElement('a');
+                    a.href = file.name;
+                    a.className = 'block w-full p-4 bg-teal-50 border border-teal-200 rounded-xl font-semibold text-teal-800 hover:bg-teal-100 transition shadow-sm';
+                    a.textContent = `📖 ${cleanName}`;
+                    listContainer.appendChild(a);
+                });
+            })
+            .catch(() => {
+                document.getElementById('lesson-list').innerHTML = '<p class="text-sm text-red-500">Kunde inte hämta lektioner.</p>';
+            });
+    </script>
+</body>
+</html>
