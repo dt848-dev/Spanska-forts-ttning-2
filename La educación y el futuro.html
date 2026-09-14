@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Framtidsjakten - Språk & Studier</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4f8;
+      max-width: 650px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 12px;
+    }
+    .score-badge {
+      font-weight: bold;
+      background: #e6f4ea;
+      color: #137333;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 1.1em;
+    }
+    .btn {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95em;
+      margin-right: 8px;
+    }
+    .btn:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .q-box {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .radio-option {
+      display: block;
+      margin: 8px 0;
+      cursor: pointer;
+    }
+    .feedback {
+      font-weight: bold;
+      margin-top: 8px;
+    }
+    .correct { color: #137333; }
+    .incorrect { color: #c5221f; }
+  </style>
+</head>
+<body>
+
+  <div class="card header-bar">
+    <h2>Skola & Framtid</h2>
+    <div class="score-badge">Poäng: <span id="score">0</span> / 20</div>
+  </div>
+
+  <div style="margin-bottom: 15px;">
+    <button id="lvl1Btn" class="btn" onclick="loadLevel(1)">Nivå 1: Skolvardag</button>
+    <button id="lvl2Btn" class="btn" onclick="loadLevel(2)" disabled>🔒 Nivå 2: Högre studier (Kräver 20p)</button>
+  </div>
+
+  <div class="card">
+    <div id="quizContainer"></div>
+  </div>
+
+<script>
+  let points = 0;
+  let answered = {};
+
+  const exercises = {
+    1: [
+      {
+        id: "l1_q1",
+        type: "text",
+        category: "Ordkunskap",
+        question: "Vad kallas platsen på skolan där man lånar böcker och söker information?",
+        answer: "bibliotek"
+      },
+      {
+        id: "l1_q2",
+        type: "text",
+        category: "Fast uttryck",
+        question: "Skriv ordet som saknas i uttrycket: 'Jag ser fram _____ att ta examen.'",
+        answer: "emot"
+      },
+      {
+        id: "l1_q3",
+        type: "mcq",
+        category: "Flerval",
+        question: "Vad innebär det att göra en 'ansökan'?",
+        options: [
+          "A) Att man ber om ledigt från en lektion.",
+          "B) Att man formellt ber om att få en plats på en utbildning.",
+          "C) Att man tackar nej till ett jobb."
+        ],
+        correctIndex: 1 // Svar B (Inte A)
+      }
+    ],
+    2: [
+      {
+        id: "l2_q1",
+        type: "text",
+        category: "Repetition & Ny kunskap",
+        question: "På Nivå 1 lånade vi böcker i ett bibliotek. Vad kallas den som studerar vidare efter gymnasiet på ett universitet?",
+        answer: "student"
+      },
+      {
+        id: "l2_q2",
+        type: "text",
+        category: "Fast uttryck",
+        question: "Fyll i rätt preposition: 'Hon har bestämt sig _____ att söka till en yrkesutbildning.'",
+        answer: "för"
+      },
+      {
+        id: "l2_q3",
+        type: "writing",
+        category: "Skrivuppgift",
+        question: "Skriv en kort mening om din framtidsplan. Meningen måste innehålla ordet 'utbildning' eller 'framtid'.",
+        keywords: ["utbildning", "framtid"]
+      }
+    ]
+  };
+
+  function updateScoreDisplay() {
+    document.getElementById('score').innerText = points;
+    const lvl2Btn = document.getElementById('lvl2Btn');
+    if (points >= 20) {
+      lvl2Btn.disabled = false;
+      lvl2Btn.innerText = "Nivå 2: Högre studier (Upplåst)";
+    }
+  }
+
+  function loadLevel(lvl) {
+    const container = document.getElementById('quizContainer');
+    container.innerHTML = `<h3>Nivå ${lvl}</h3>`;
+
+    exercises[lvl].forEach((ex, idx) => {
+      const isDone = answered[ex.id];
+      let html = `<div class="q-box"><p><strong>${idx + 1}. [${ex.category}]</strong><br>${ex.question}</p>`;
+
+      if (ex.type === 'text' || ex.type === 'writing') {
+        html += `<input type="text" id="input_${ex.id}" ${isDone ? 'disabled' : ''} placeholder="Skriv ditt svar här...">`;
+        html += `<br><button class="btn" ${isDone ? 'disabled' : ''} onclick="checkText('${ex.id}', '${ex.answer || ''}', ${ex.type === 'writing'})">Rätta</button>`;
+      } else if (ex.type === 'mcq') {
+        ex.options.forEach((opt, optIdx) => {
+          html += `<label class="radio-option"><input type="radio" name="mcq_${ex.id}" value="${optIdx}" ${isDone ? 'disabled' : ''}> ${opt}</label>`;
+        });
+        html += `<button class="btn" ${isDone ? 'disabled' : ''} onclick="checkMcq('${ex.id}', ${ex.correctIndex})">Rätta</button>`;
+      }
+
+      html += `<div id="fb_${ex.id}" class="feedback">${isDone ? '✓ Besvarad (+10p)' : ''}</div></div>`;
+      container.innerHTML += html;
+    });
+  }
+
+  function checkText(id, correctAnswer, isWriting) {
+    if (answered[id]) return;
+    const val = document.getElementById(`input_${id}`).value.trim().toLowerCase();
+    const fb = document.getElementById(`fb_${id}`);
+
+    if (isWriting) {
+      if (val.includes("utbildning") || val.includes("framtid")) {
+        correctFeedback(id, fb);
+      } else {
+        fb.className = "feedback incorrect";
+        fb.innerText = "Meningen måste innehålla ordet 'utbildning' eller 'framtid'.";
+      }
+      return;
+    }
+
+    if (val === correctAnswer.toLowerCase()) {
+      correctFeedback(id, fb);
+    } else {
+      fb.className = "feedback incorrect";
+      fb.innerText = "Inte helt rätt, kontrollera stavningen och försök igen.";
+    }
+  }
+
+  function checkMcq(id, correctIndex) {
+    if (answered[id]) return;
+    const selected = document.querySelector(`input[name="mcq_${id}"]:checked`);
+    const fb = document.getElementById(`fb_${id}`);
+
+    if (!selected) {
+      fb.className = "feedback incorrect";
+      fb.innerText = "Välj ett alternativ först.";
+      return;
+    }
+
+    if (parseInt(selected.value) === correctIndex) {
+      correctFeedback(id, fb);
+    } else {
+      fb.className = "feedback incorrect";
+      fb.innerText = "Fel alternativ, försök igen.";
+    }
+  }
+
+  function correctFeedback(id, fb) {
+    fb.className = "feedback correct";
+    fb.innerText = "Rätt! +10 poäng.";
+    points += 10;
+    answered[id] = true;
+    updateScoreDisplay();
+  }
+
+  loadLevel(1);
+</script>
+
+</body>
+</html>
