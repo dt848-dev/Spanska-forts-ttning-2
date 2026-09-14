@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Framtidsjakten: Spanska - Språk, Studier & Karriär</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .task-card { transition: all 0.2s ease-in-out; }
+        .task-card:not(.locked):hover { transform: translateY(-3px); }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-warning {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800 pb-12">
+
+    <!-- TOAST NOTIFICATION FÖR NÄR INKLISTRING BLOCKERAS -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-medium text-sm border border-rose-400">
+        <i class="fa-solid fa-ban text-lg"></i>
+        <span id="toastMessage">Inklistring är avstängd! Du måste skriva svaret själv på spanska.</span>
+    </div>
+
+    <!-- TOP BAR / HEADER -->
+    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-amber-300"></i> ¡Rumbo al Futuro! (Spanska)
+                </h1>
+                <p class="text-indigo-200 text-sm">Lär dig spanska för studier, yrkesliv och framtid</p>
+            </div>
+            <!-- Elevprofil & Nollställning -->
+            <div class="flex items-center gap-3">
+                <input type="text" id="studentName" placeholder="Ditt namn..." class="px-3 py-1.5 rounded-lg text-slate-800 text-sm font-medium border-none focus:ring-2 focus:ring-indigo-300 outline-none shadow-inner" oninput="saveName()">
+                <button onclick="resetProgress()" class="text-xs bg-indigo-800 hover:bg-indigo-900 text-indigo-200 px-2.5 py-1.5 rounded transition" title="Nollställ alla poäng">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+
+        <!-- PROGRESS & POÄNGBAR -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Din Progress</span>
+                    <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <span id="scoreText">0</span> / 215 <span class="text-sm font-normal text-slate-500">poäng</span>
+                    </h2>
+                </div>
+                <div id="badgeContainer" class="text-right">
+                    <span id="statusBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-hourglass-start"></i> Börja samla poäng!
+                    </span>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner border border-slate-200">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-500 via-amber-500 to-emerald-500 h-full w-0 transition-all duration-500 rounded-full"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Gör de fyra gröna rätterna för att låsa upp de gula en i taget. Lås därefter upp de röda rätterna!</p>
+        </section>
+
+        <!-- DASHBOARD UPPGIFTER -->
+        <div class="space-y-6">
+
+            <!-- 🟢 GRÖNA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Gröna Rätter <span class="text-xs text-slate-500 font-normal">(Grundläggande bas • 4 öppna från start)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="greenTasks"></div>
+            </div>
+
+            <!-- 🟡 GULA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-amber-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Gula Rätter <span class="text-xs text-slate-500 font-normal">(Fördjupning • Låses upp en i taget)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="yellowTasks"></div>
+            </div>
+
+            <!-- 🔴 RÖDA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Röda Rätter <span class="text-xs text-slate-500 font-normal">(Avancerad tillämpning • Låses upp en i taget)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4" id="redTasks"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- INTERAKTIV MODAL FÖR ÖVNINGAR -->
+    <div id="exerciseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 rounded-t-2xl">
+                <div>
+                    <span id="modalCategory" class="text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800 mt-1"></h2>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">&times;</button>
+            </div>
+            
+            <!-- Modal Content Body -->
+            <div id="modalBody" class="p-6 flex-1 space-y-4">
+                <!-- Dynamiskt innehåll -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 rounded-b-2xl">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition">Stäng</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scriptUrl = "KLISTRA_IN_DIN_WEBBAUPP_URL_HÄR";
+
+        const tasks = [
+            // Gröna rätter
+            { id: 'task1', color: 'green', points: 10, title: '1. Skolämnen & Rutiner', desc: 'Skriv de spanska orden för skolämnen, lärare och tider.', type: 'quiz_school_subjects' },
+            { id: 'task2', color: 'green', points: 10, title: '2. Klassrumsfraser (Ihopkoppling)', desc: 'Para ihop vanliga klassrumsfraser på spanska med svensk översättning.', type: 'quiz_match_phrases' },
+            { id: 'task3', color: 'green', points: 15, title: '3. Skriv klassrumsfraser', desc: 'Skriv klassrumsfraserna på spanska utan hjälp.', type: 'quiz_write_phrases' },
+            { id: 'task4', color: 'green', points: 10, title: '4. Böja verbet IR', desc: 'Böj verbet "ir" (att gå/åka) korrekt i alla personer i presens.', type: 'quiz_conjugate_ir' },
+            
+            // Gula rätter
+            { id: 'task5', color: 'yellow', points: 15, title: '5. Framtid med IR A + Infinitiv', desc: 'Bygg 10 meningar i futurum med rätt form av IR + A + verbet.', type: 'quiz_future_structure' },
+            { id: 'task6', color: 'yellow', points: 20, title: '6. Estudios y Profesiones', desc: 'Översätt 10 ord och uttryck för högre studier och yrken.', type: 'quiz_higher_edu' },
+            { id: 'task7', color: 'yellow', points: 20, title: '7. El Detective de la lengua', desc: 'Finn och korrigera grammatikfel i meningar om skola och framtid.', type: 'error_detective' },
+            { id: 'task8', color: 'yellow', points: 20, title: '8. Mi futuro (Kort skrivtext)', desc: 'Skriv en kort text (minst 60 ord) om vad du vill göra i framtiden.', type: 'write_short_future' },
+
+            // Röda rätter
+            { id: 'task9', color: 'red', points: 25, title: '9. Chatear en español', desc: 'Svara interaktivt på en spansktalande syv/vän.', type: 'chat_sim' },
+            { id: 'task10', color: 'red', points: 30, title: '10. Sluttext: Presentación y Futuro', desc: 'Skriv en utförlig text (minst 250 ord) i presens och futurum.', type: 'write_future' },
+            { id: 'task11', color: 'red', points: 40, title: '11. Presentación oral', desc: 'Spela in en kort video/ljudfil där du presenterar din text.', type: 'video_record' }
+        ];
+
+        let state = { points: 0, completed: {}, studentName: '' };
+
+        window.onload = () => { loadState(); renderTasks(); updateUI(); setupGlobalPasteBlocker(); };
+
+        function loadState() {
+            const saved = localStorage.getItem('es_framtid_spanska_v4_state');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('studentName').value = state.studentName || '';
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('es_framtid_spanska_v4_state', JSON.stringify(state));
+        }
+
+        function saveName() {
+            state.studentName = document.getElementById('studentName').value;
+            saveState();
+        }
+
+        function resetProgress() {
+            if (confirm("¿Quieres reiniciar tus puntos? (Vill du nollställ alla dina poäng?)")) {
+                state.points = 0;
+                state.completed = {};
+                saveState();
+                renderTasks();
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('scoreText').innerText = state.points;
+            const percentage = Math.min(100, (state.points / 215) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+
+            const badge = document.getElementById('statusBadge');
+            if (state.points >= 180) {
+                badge.className = "bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-trophy text-amber-500"></i> ¡Experto en español! Fantástico!`;
+            } else if (state.points >= 90) {
+                badge.className = "bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-fire text-indigo-600"></i> ¡Buen camino hacia el objetivo!`;
+            } else {
+                badge.className = "bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> Börja samla poäng!`;
+            }
+        }
+
+        function isTaskUnlocked(index) {
+            if (index <= 3) return true;
+            if (index === 4) {
+                return state.completed[tasks[0].id] && state.completed[tasks[1].id] && state.completed[tasks[2].id] && state.completed[tasks[3].id];
+            }
+            return !!state.completed[tasks[index - 1].id];
+        }
+
+        function renderTasks() {
+            const greenContainer = document.getElementById('greenTasks');
+            const yellowContainer = document.getElementById('yellowTasks');
+            const redContainer = document.getElementById('redTasks');
+
+            greenContainer.innerHTML = ''; yellowContainer.innerHTML = ''; redContainer.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const isDone = !!state.completed[task.id];
+                const unlocked = isTaskUnlocked(index);
+
+                const card = document.createElement('div');
+                let badgeColor = task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
+
+                if (!unlocked) {
+                    card.className = "task-card locked bg-slate-50 p-4 rounded-xl border border-slate-200 opacity-60 flex flex-col justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                <span class="text-slate-400 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-lock"></i> Låst</span>
+                            </div>
+                            <h4 class="font-bold text-slate-700 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-400 mb-3">${task.desc}</p>
+                        </div>
+                        <button disabled class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg bg-slate-200 text-slate-400 cursor-not-allowed">
+                            🔒 Slutför tidigare uppgift
+                        </button>
+                    `;
+                } else {
+                    card.className = `task-card bg-white p-4 rounded-xl border ${isDone ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'} shadow-sm flex flex-col justify-between`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="${badgeColor} text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                ${isDone ? '<span class="text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Hecho</span>' : ''}
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-500 mb-3">${task.desc}</p>
+                        </div>
+                        <button onclick="openTask('${task.id}')" class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg transition ${isDone ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
+                            ${isDone ? 'Gör om' : 'Starta'}
+                        </button>
+                    `;
+                }
+
+                if (task.color === 'green') greenContainer.appendChild(card);
+                if (task.color === 'yellow') yellowContainer.appendChild(card);
+                if (task.color === 'red') redContainer.appendChild(card);
+            });
+        }
+
+        function openTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('modalTitle').innerText = task.title;
+            const catBadge = document.getElementById('modalCategory');
+            catBadge.innerText = `+${task.points} Poäng`;
+            catBadge.className = `text-xs font-bold px-2.5 py-0.5 rounded-full ${task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            switch(task.type) {
+                case 'quiz_school_subjects': renderQuizSchoolSubjects(modalBody, task); break;
+                case 'quiz_match_phrases': renderQuizMatchPhrases(modalBody, task); break;
+                case 'quiz_write_phrases': renderQuizWritePhrases(modalBody, task); break;
+                case 'quiz_conjugate_ir': renderQuizConjugateIr(modalBody, task); break;
+                case 'quiz_future_structure': renderQuizFutureStructure(modalBody, task); break;
+                case 'quiz_higher_edu': renderQuizHigherEdu(modalBody, task); break;
+                case 'error_detective': renderErrorDetective(modalBody, task); break;
+                case 'write_short_future': renderWriteShortFuture(modalBody, task); break;
+                case 'chat_sim': renderChatSim(modalBody, task); break;
+                case 'write_future': renderWriteFuture(modalBody, task); break;
+                case 'video_record': renderVideoRecord(modalBody, task); break;
+            }
+
+            document.getElementById('exerciseModal').classList.remove('hidden');
+        }
+
+        function closeModal() { 
+            document.getElementById('exerciseModal').classList.add('hidden'); 
+            if (typeof mediaRecorder !== 'undefined' && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        function completeTask(taskId, points) {
+            const isFirstTime = !state.completed[taskId];
+            if (isFirstTime) {
+                state.points += points;
+                state.completed[taskId] = true;
+                saveState();
+                updateUI();
+                renderTasks();
+                confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+            }
+            closeModal();
+        }
+
+        function setupGlobalPasteBlocker() {
+            document.addEventListener('paste', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    e.preventDefault();
+                    e.target.classList.add('shake-warning');
+                    setTimeout(() => e.target.classList.remove('shake-warning'), 500);
+                    showToast("⛔ ¡Sin trampas! Skriv svaret själv på spanska istället för att klistra in.");
+                }
+            }, true);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function norm(s) { 
+            return s.trim().toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, ' '); 
+        }
+
+        function toggleHint(hintId) {
+            const elem = document.getElementById(hintId);
+            if (elem) elem.classList.toggle('hidden');
+        }
+
+        // 🟢 GRÖN 1: Skolämnen & Rutiner
+        function renderQuizSchoolSubjects(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Skriv de spanska orden för följande begrepp:</p>
+                <div class="space-y-3 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="font-bold block mb-1">1. Idrott och hälsa:</span>
+                            <input type="text" id="subj1" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">2. Samhällskunskap:</span>
+                            <input type="text" id="subj2" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">3. Naturkunskap:</span>
+                            <input type="text" id="subj3" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">4. Biologi:</span>
+                            <input type="text" id="subj4" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">5. Svenska:</span>
+                            <input type="text" id="subj5" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">6. Engelska:</span>
+                            <input type="text" id="subj6" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">7. Historia:</span>
+                            <input type="text" id="subj7" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">8. Rast:</span>
+                            <input type="text" id="subj8" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">9. Lärare:</span>
+                            <input type="text" id="subj9" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">10. Lektion / Klass:</span>
+                            <input type="text" id="subj10" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">11. Att börja:</span>
+                            <input type="text" id="subj11" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">12. Att sluta:</span>
+                            <input type="text" id="subj12" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="checkSchoolSubjects('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta svar</button>
+                        <button onclick="toggleHint('hintSubj')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition" title="Behöver du hjälp?">💡 Hjälp</button>
+                    </div>
+
+                    <p id="hintSubj" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden">
+                        <b>Ledtråd:</b> Ämnen slutar ofta på <i>-ía</i> eller skrivs som <i>ciencias...</i>. Tänk på ord som <i>recreo</i>, <i>profesor</i> och verben <i>empezar/terminar</i>.
+                    </p>
+                    <p id="subjRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkSchoolSubjects(taskId, points) {
+            const v1 = norm(document.getElementById('subj1').value);
+            const v2 = norm(document.getElementById('subj2').value);
+            const v3 = norm(document.getElementById('subj3').value);
+            const v4 = norm(document.getElementById('subj4').value);
+            const v5 = norm(document.getElementById('subj5').value);
+            const v6 = norm(document.getElementById('subj6').value);
+            const v7 = norm(document.getElementById('subj7').value);
+            const v8 = norm(document.getElementById('subj8').value);
+            const v9 = norm(document.getElementById('subj9').value);
+            const v10 = norm(document.getElementById('subj10').value);
+            const v11 = norm(document.getElementById('subj11').value);
+            const v12 = norm(document.getElementById('subj12').value);
+
+            const c1 = v1.includes('educacion fisica');
+            const c2 = v2.includes('ciencias sociales');
+            const c3 = v3.includes('ciencias naturales');
+            const c4 = v4.includes('biologia');
+            const c5 = v5.includes('sueco');
+            const c6 = v6.includes('ingles');
+            const c7 = v7.includes('historia');
+            const c8 = v8.includes('recreo');
+            const c9 = v9.includes('profesor') || v9.includes('profesora');
+            const c10 = v10.includes('clase');
+            const c11 = v11.includes('empezar');
+            const c12 = v12.includes('terminar');
+
+            if (c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10 && c11 && c12) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('subjRes');
+                res.innerText = "Några ord är felstavade eller saknas. Klicka på 💡 Hjälp om du kört fast!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 2: Klassrumsfraser (Ihopkoppling)
+        const classroomPhrasesData = [
+            { es: "Perdón por llegar tarde", sv: "Ursäkta att jag kommer för sent" },
+            { es: "¿Me ayudas, por favor?", sv: "Kan du hjälpa mig, snälla?" },
+            { es: "No entiendo", sv: "Jag förstår inte" },
+            { es: "¿Qué significa...?", sv: "Vad betyder...?" },
+            { es: "¿Puedo ir al baño?", sv: "Får jag gå på toaletten?" },
+            { es: "¿Cómo se dice... en español?", sv: "Hur säger man... på spanska?" },
+            { es: "Más despacio, por favor", sv: "Långsammare, snälla" },
+            { es: "Tengo una pregunta", sv: "Jag har en fråga" }
+        ];
+
+        function renderQuizMatchPhrases(container, task) {
+            const svOptions = [...classroomPhrasesData].map(p => p.sv).sort(() => Math.random() - 0.5);
+
+            let html = `<p class="text-sm text-slate-600 mb-3">Välj rätt svensk översättning för varje spansk klassrumsfras:</p><div class="space-y-3 text-xs">`;
+
+            classroomPhrasesData.forEach((p, idx) => {
+                html += `
+                    <div class="p-2 border rounded-lg bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <span class="font-bold text-slate-800 md:w-1/2">${p.es}</span>
+                        <select id="match_${idx}" class="p-1.5 border rounded-md bg-white text-slate-700 outline-none md:w-1/2">
+                            <option value="">-- Välj svenska --</option>
+                            ${svOptions.map(sv => `<option value="${sv}">${sv}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            });
+
+            html += `
+                <button onclick="checkMatchPhrases('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2 transition">Rätta ihopkoppling</button>
+                <p id="matchRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        function checkMatchPhrases(taskId, points) {
+            let allCorrect = true;
+            classroomPhrasesData.forEach((p, idx) => {
+                const val = document.getElementById(`match_${idx}`).value;
+                if (val !== p.sv) allCorrect = false;
+            });
+
+            if (allCorrect) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('matchRes');
+                res.innerText = "Några parningskombinationer stämmer inte. Försök igen!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 3: Skriv klassrumsfraser
+        function renderQuizWritePhrases(container, task) {
+            let html = `<p class="text-sm text-slate-600 mb-3">Skriv fraserna på <b>spanska</b> utan hjälp:</p><div class="space-y-3 text-xs">`;
+
+            classroomPhrasesData.forEach((p, idx) => {
+                html += `
+                    <div>
+                        <span class="font-bold block mb-1">${idx + 1}. ${p.sv}:</span>
+                        <input type="text" id="write_p_${idx}" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none">
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="flex gap-2 mt-2">
+                    <button onclick="checkWritePhrases('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta skrivna fraser</button>
+                    <button onclick="toggleHint('hintWriteP')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp</button>
+                </div>
+                <p id="hintWriteP" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden">
+                    <b>Ledtråd:</b> Tänk på begrepp som <i>Perdón...</i>, <i>¿Me ayudas...?</i>, <i>No entiendo</i> och <i>¿Puedo ir...?</i>.
+                </p>
+                <p id="writePRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        function checkWritePhrases(taskId, points) {
+            let correctCount = 0;
+            classroomPhrasesData.forEach((p, idx) => {
+                const val = norm(document.getElementById(`write_p_${idx}`).value);
+                const target = norm(p.es);
+                if (val === target || val.replace(/[?¡!.,]/g, '') === target.replace(/[?¡!.,]/g, '')) {
+                    correctCount++;
+                }
+            });
+
+            if (correctCount === classroomPhrasesData.length) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('writePRes');
+                res.innerText = `Du har ${correctCount} av ${classroomPhrasesData.length} rätt. Dubbelkolla stavningen eller klicka på 💡 Hjälp!`;
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 4: Böja verbet IR (Presens)
+        function renderQuizConjugateIr(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Böj verbet <b>IR</b> (att gå/åka) i presens för varje person:</p>
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-28 font-bold">1. Yo (jag):</span>
+                        <input type="text" id="ir1" placeholder="Skriv på spanska..." class="p-2 border rounded-lg flex-1 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-28 font-bold">2. Tú (du):</span>
+                        <input type="text" id="ir2" placeholder="Skriv på spanska..." class="p-2 border rounded-lg flex-1 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-28 font-bold">3. Él/Ella (han/hon):</span>
+                        <input type="text" id="ir3" placeholder="Skriv på spanska..." class="p-2 border rounded-lg flex-1 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-28 font-bold">4. Nosotros (vi):</span>
+                        <input type="text" id="ir4" placeholder="Skriv på spanska..." class="p-2 border rounded-lg flex-1 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-28 font-bold">5. Vosotros (ni):</span>
+                        <input type="text" id="ir5" placeholder="Skriv på spanska..." class="p-2 border rounded-lg flex-1 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-28 font-bold">6. Ellos (de):</span>
+                        <input type="text" id="ir6" placeholder="Skriv på spanska..." class="p-2 border rounded-lg flex-1 outline-none">
+                    </div>
+
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="checkConjugateIr('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta verbböjningar</button>
+                        <button onclick="toggleHint('hintIr')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp</button>
+                    </div>
+
+                    <p id="hintIr" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden">
+                        <b>Ledtråd:</b> Alla böjningar av IR i presens börjar på bokstaven <b>v-</b> (t.ex. v..., v..., v...).
+                    </p>
+                    <p id="irRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkConjugateIr(taskId, points) {
+            const c1 = norm(document.getElementById('ir1').value) === 'voy';
+            const c2 = norm(document.getElementById('ir2').value) === 'vas';
+            const c3 = norm(document.getElementById('ir3').value) === 'va';
+            const c4 = norm(document.getElementById('ir4').value) === 'vamos';
+            const c5 = norm(document.getElementById('ir5').value) === 'vais';
+            const c6 = norm(document.getElementById('ir6').value) === 'van';
+
+            if (c1 && c2 && c3 && c4 && c5 && c6) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('irRes');
+                res.innerText = "Någon böjning blev fel. Klicka på 💡 Hjälp för en ledtråd!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 5: Utveckla framtidsstruktur (10 meningar: IR + A + Infinitiv)
+        function renderQuizFutureStructure(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Översätt 10 meningar till futurum med formeln: <b>IR + A + Grundform</b>:</p>
+                <div class="space-y-2.5 text-xs">
+                    <div>
+                        <span class="font-bold block mb-1">1. Jag ska studera historia:</span>
+                        <input type="text" id="fut1" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">2. Vi ska börja lektionen:</span>
+                        <input type="text" id="fut2" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">3. De ska arbeta i framtiden:</span>
+                        <input type="text" id="fut3" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">4. Du ska läsa en bok:</span>
+                        <input type="text" id="fut4" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">5. Han ska dricka vatten:</span>
+                        <input type="text" id="fut5" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">6. Hon ska äta:</span>
+                        <input type="text" id="fut6" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">7. Ni ska skriva en text:</span>
+                        <input type="text" id="fut7" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">8. Jag ska prata spanska:</span>
+                        <input type="text" id="fut8" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">9. Vi ska resa till Spanien:</span>
+                        <input type="text" id="fut9" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <span class="font-bold block mb-1">10. Vad ska du göra?:</span>
+                        <input type="text" id="fut10" placeholder="Skriv hela meningen på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="checkFutureStructure('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta meningar</button>
+                        <button onclick="toggleHint('hintFut')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp</button>
+                    </div>
+
+                    <p id="hintFut" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden">
+                        <b>Formel:</b> Böjd form av IR (voy/vas/va/vamos/vais/van) + <b>a</b> + verb i grundform (estudiar, empezar, trabajar, leer, beber, comer, escribir, hablar, viajar, hacer).
+                    </p>
+                    <p id="futRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkFutureStructure(taskId, points) {
+            const f1 = norm(document.getElementById('fut1').value);
+            const f2 = norm(document.getElementById('fut2').value);
+            const f3 = norm(document.getElementById('fut3').value);
+            const f4 = norm(document.getElementById('fut4').value);
+            const f5 = norm(document.getElementById('fut5').value);
+            const f6 = norm(document.getElementById('fut6').value);
+            const f7 = norm(document.getElementById('fut7').value);
+            const f8 = norm(document.getElementById('fut8').value);
+            const f9 = norm(document.getElementById('fut9').value);
+            const f10 = norm(document.getElementById('fut10').value);
+
+            const c1 = f1.includes('voy a estudiar historia');
+            const c2 = f2.includes('vamos a empezar') || f2.includes('vamos a comenzar');
+            const c3 = f3.includes('van a trabajar');
+            const c4 = f4.includes('vas a leer');
+            const c5 = f5.includes('va a beber') || f5.includes('va a tomar');
+            const c6 = f6.includes('va a comer') || f6.includes('va a almorzar');
+            const c7 = f7.includes('vais a escribir');
+            const f8_norm = f8.replace('espanol', 'espanol');
+            const c8 = f8_norm.includes('voy a hablar espanol') || f8_norm.includes('voy a hablar en espanol');
+            const c9 = f9.includes('vamos a viajar a espana');
+            const c10 = f10.includes('que vas a hacer');
+
+            if (c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('futRes');
+                res.innerText = "Någon eller några meningar behöver korrigeras. Se till att formeln IR + A + Grundform används i alla 10 meningar!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 6: Estudios y Profesiones (10 ord/begrepp)
+        function renderQuizHigherEdu(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Översätt 10 ord och yrken för högre studier till spanska:</p>
+                <div class="space-y-2.5 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="font-bold block mb-1">1. Universitetet:</span>
+                            <input type="text" id="he1" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">2. Gymnasiet:</span>
+                            <input type="text" id="he2" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">3. Läkare:</span>
+                            <input type="text" id="he3" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">4. Ingenjör:</span>
+                            <input type="text" id="he4" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">5. Lärare:</span>
+                            <input type="text" id="he5" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">6. Advokat:</span>
+                            <input type="text" id="he6" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">7. Sjuksköterska:</span>
+                            <input type="text" id="he7" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">8. Kock:</span>
+                            <input type="text" id="he8" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">9. Polis:</span>
+                            <input type="text" id="he9" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <span class="font-bold block mb-1">10. Studier / Karriär:</span>
+                            <input type="text" id="he10" placeholder="Skriv på spanska..." class="w-full p-2 border rounded-lg outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="checkHigherEdu('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta alla 10 ord</button>
+                        <button onclick="toggleHint('hintHe')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp</button>
+                    </div>
+
+                    <p id="hintHe" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden">
+                        <b>Ledtråd:</b> Tänk på ord som <i>universidad</i>, <i>instituto/bachillerato</i>, <i>médico</i>, <i>ingeniero</i>, <i>profesor</i>, <i>abogado</i>, <i>enfermero</i>, <i>cocinero</i>, <i>policía</i> och <i>estudios/carrera</i>.
+                    </p>
+                    <p id="heRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkHigherEdu(taskId, points) {
+            const h1 = norm(document.getElementById('he1').value);
+            const h2 = norm(document.getElementById('he2').value);
+            const h3 = norm(document.getElementById('he3').value);
+            const h4 = norm(document.getElementById('he4').value);
+            const h5 = norm(document.getElementById('he5').value);
+            const h6 = norm(document.getElementById('he6').value);
+            const h7 = norm(document.getElementById('he7').value);
+            const h8 = norm(document.getElementById('he8').value);
+            const h9 = norm(document.getElementById('he9').value);
+            const h10 = norm(document.getElementById('he10').value);
+
+            const c1 = h1.includes('universidad');
+            const c2 = h2.includes('instituto') || h2.includes('bachillerato');
+            const c3 = h3.includes('medico') || h3.includes('medica');
+            const c4 = h4.includes('ingeniero') || h4.includes('ingeniera');
+            const c5 = h5.includes('profesor') || h5.includes('profesora') || h5.includes('maestro');
+            const c6 = h6.includes('abogado') || h6.includes('abogada');
+            const c7 = h7.includes('enfermero') || h7.includes('enfermera');
+            const c8 = h8.includes('cocinero') || h8.includes('cocinera');
+            const c9 = h9.includes('policia');
+            const c10 = h10.includes('estudio') || h10.includes('carrera') || h10.includes('educacion');
+
+            if (c1 && c2 && c3 && c4 && c5 && c6 && c7 && c8 && c9 && c10) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('heRes');
+                res.innerText = "Något ord saknas eller är felstavat. Klicka på 💡 Hjälp om du behöver en ledtråd!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 7: Språkdetektiven (Grammatikfel - 6 meningar)
+        function renderErrorDetective(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Hitta felet i varje mening och skriv om den helt korrekt på spanska:</p>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <div class="p-1.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mb-1">1. "Yo va a estudiar biología."</div>
+                        <input type="text" id="ed1" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div>
+                        <div class="p-1.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mb-1">2. "Mañana nosotros va a terminar la clase."</div>
+                        <input type="text" id="ed2" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div>
+                        <div class="p-1.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mb-1">3. "Ellos va a trabajar en un hospital."</div>
+                        <input type="text" id="ed3" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div>
+                        <div class="p-1.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mb-1">4. "Tú voy a hablar en español."</div>
+                        <input type="text" id="ed4" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div>
+                        <div class="p-1.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mb-1">5. "Ella vamos a comer a las doce."</div>
+                        <input type="text" id="ed5" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div>
+                        <div class="p-1.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mb-1">6. "Vosotros voy a escribir un texto."</div>
+                        <input type="text" id="ed6" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded-lg outline-none">
+                    </div>
+
+                    <button onclick="checkErrorDetective('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 mt-2 transition">Rätta alla meningar</button>
+                    <p id="edRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkErrorDetective(taskId, points) {
+            const e1 = norm(document.getElementById('ed1').value);
+            const e2 = norm(document.getElementById('ed2').value);
+            const e3 = norm(document.getElementById('ed3').value);
+            const e4 = norm(document.getElementById('ed4').value);
+            const e5 = norm(document.getElementById('ed5').value);
+            const e6 = norm(document.getElementById('ed6').value);
+
+            const c1 = e1.includes('voy a estudiar biologia');
+            const c2 = e2.includes('vamos a terminar la clase');
+            const c3 = e3.includes('van a trabajar en un hospital');
+            const c4 = e4.includes('vas a hablar');
+            const c5 = e5.includes('va a comer a las doce');
+            const c6 = e6.includes('vais a escribir un texto');
+
+            if (c1 && c2 && c3 && c4 && c5 && c6) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('edRes');
+                res.innerText = "Några meningar är fortfarande felaktiga. Kontrollera att verbet 'IR' böjs korrekt för rätt person!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 8: Kort skrivuppgift (Mi futuro - minst 60 ord)
+        function renderWriteShortFuture(container, task) {
+            container.innerHTML = `
+                <div class="space-y-2 text-xs text-slate-600 mb-3">
+                    <p class="font-bold text-slate-800 text-sm">Skriv en kort text om dina framtidsplaner (Mis planes del futuro).</p>
+                    <p>Berätta vad du vill göra eller ska göra i framtiden, vad du vill studera eller arbeta med och varför.</p>
+                    <p class="text-amber-800 font-medium bg-amber-50 p-2 rounded border border-amber-200">
+                        <b>Krav:</b> Texten måste innehålla <b>minst 60 ord</b> på spanska samt använda uttryck som <i>voy a...</i>, <i>quiero...</i> eller <i>me gustaría...</i>.
+                    </p>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <textarea id="sf1" rows="6" oninput="updateShortWordCount()" placeholder="Skriv din korta text om framtiden på spanska här..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none font-mono"></textarea>
+                    
+                    <div class="flex justify-between items-center bg-slate-100 p-2 rounded-lg border border-slate-200">
+                        <span class="font-bold text-slate-700">Antal ord: <span id="shortWordCounter" class="text-indigo-600">0</span> / 60</span>
+                        <span id="shortWordWarning" class="text-rose-500 font-semibold">Skriv fler ord</span>
+                    </div>
+
+                    <button onclick="checkWriteShortFuture('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Lämna in kort skrivtext</button>
+                    <p id="sfRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function updateShortWordCount() {
+            const text = document.getElementById('sf1').value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const counter = document.getElementById('shortWordCounter');
+            const warning = document.getElementById('shortWordWarning');
+
+            counter.innerText = words;
+            if (words >= 60) {
+                warning.innerText = "✓ Tillräckligt lång!";
+                warning.className = "text-emerald-600 font-semibold";
+            } else {
+                warning.innerText = `Behöver ${60 - words} ord till`;
+                warning.className = "text-rose-500 font-semibold";
+            }
+        }
+
+        function checkWriteShortFuture(taskId, points) {
+            const rawText = document.getElementById('sf1').value.trim();
+            const words = rawText ? rawText.split(/\s+/).length : 0;
+            const val = norm(rawText);
+
+            const hasFutureStructure = val.includes('voy a') || val.includes('quiero') || val.includes('me gustaria') || val.includes('vamos a');
+
+            if (words >= 60 && hasFutureStructure) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('sfRes');
+                if (words < 60) {
+                    res.innerText = `Din text har bara ${words} ord. Du måste skriva minst 60 ord.`;
+                } else {
+                    res.innerText = "Kom ihåg att använda framtidsuttryck som 'voy a...', 'quiero...' eller 'me gustaría...'.";
+                }
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🔴 RÖD 9: Chatt-simulering
+        function renderChatSim(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Besvara din spanska studie- och yrkesvägledare i chatten (på spanska):</p>
+                <div class="bg-slate-100 p-3 rounded-xl space-y-3 text-xs mb-3 border border-slate-200">
+                    <div class="bg-white p-2.5 rounded-lg shadow-sm max-w-[85%] border border-slate-200">
+                        <span class="font-bold text-indigo-600 block mb-0.5">Asesor de estudios:</span>
+                        ¡Hola! ¿Cuáles son tus asignaturas favoritas en la escuela y qué vas a estudiar en el futuro?
+                    </div>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <textarea id="cs1" rows="3" placeholder="Skriv ditt svar på spanska..." class="w-full p-2 border rounded-lg outline-none"></textarea>
+                    <button onclick="checkChatSim('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Skicka svar</button>
+                    <p id="csRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkChatSim(taskId, points) {
+            const val = norm(document.getElementById('cs1').value);
+            if (val.length >= 35 && (val.includes('mis asignaturas') || val.includes('favorita') || val.includes('me gusta')) && (val.includes('voy a') || val.includes('estudiar'))) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('csRes');
+                res.innerText = "Svara mer ingående! Berätta vilka ämnen du gillar och vad du ska studera i framtiden.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🔴 RÖD 10: Sluttext - Presentación y Futuro (250 ord)
+        function renderWriteFuture(container, task) {
+            container.innerHTML = `
+                <div class="space-y-2 text-xs text-slate-600 mb-3">
+                    <p class="font-bold text-slate-800 text-sm">Skriv en sammanhängande presentation om dig själv, din skolgång och dina framtidsplaner.</p>
+                    <ul class="list-disc pl-4 space-y-1">
+                        <li><b>Presens:</b> Berätta om dig själv, din nuvarande skola, dina skolämnen, rutiner och vad du tycker om.</li>
+                        <li><b>Futurum (IR + A + Infinitiv):</b> Berätta om dina framtidsplaner, vad du ska studera efter grundskolan, yrkesdrömmar och vad du ska göra om 5–10 år.</li>
+                        <li><b>Krav:</b> Texten måste innehålla <b>minst 250 ord</b>.</li>
+                    </ul>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <textarea id="wf1" rows="10" oninput="updateWordCount()" placeholder="Börja skriva din presentation på spanska här..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-300 outline-none font-mono"></textarea>
+                    
+                    <div class="flex justify-between items-center bg-slate-100 p-2 rounded-lg border border-slate-200">
+                        <span class="font-bold text-slate-700">Antal ord: <span id="wordCounter" class="text-indigo-600">0</span> / 250</span>
+                        <span id="wordWarning" class="text-rose-500 font-semibold">Skriv fler ord</span>
+                    </div>
+
+                    <button onclick="checkWriteFuture('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Lämna in sluttext</button>
+                    <p id="wfRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('wf1').value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const counter = document.getElementById('wordCounter');
+            const warning = document.getElementById('wordWarning');
+
+            counter.innerText = words;
+            if (words >= 250) {
+                warning.innerText = "✓ Tillräckligt lång!";
+                warning.className = "text-emerald-600 font-semibold";
+            } else {
+                warning.innerText = `Behöver ${250 - words} ord till`;
+                warning.className = "text-rose-500 font-semibold";
+            }
+        }
+
+        function checkWriteFuture(taskId, points) {
+            const rawText = document.getElementById('wf1').value.trim();
+            const words = rawText ? rawText.split(/\s+/).length : 0;
+            const val = norm(rawText);
+
+            const hasPresent = val.includes('me llamo') || val.includes('estudio') || val.includes('tengo') || val.includes('es') || val.includes('me gusta');
+            const hasFuture = val.includes('voy a') || val.includes('vamos a') || val.includes('van a');
+
+            if (words >= 250 && hasPresent && hasFuture) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('wfRes');
+                if (words < 250) {
+                    res.innerText = `Din text har för närvarande bara ${words} ord. Du måste skriva minst 250 ord.`;
+                } else {
+                    res.innerText = "Se till att du använder både presens (t.ex. me llamo, estudio) och futurum (voy a...) i din text.";
+                }
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🔴 RÖD 11: Muntlig Presentation / Videoinspelning
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        function renderVideoRecord(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Spela in en video/ljudfil där du muntligt presenterar din spansktext från uppgift 10. Videon skickas direkt till lärarens Google Drive.</p>
+                <div class="space-y-3 text-xs">
+                    <video id="videoPreview" autoplay muted class="w-full bg-slate-900 rounded-lg aspect-video object-cover border border-slate-300"></video>
+                    
+                    <div class="flex gap-2">
+                        <button id="startRecBtn" onclick="startRecording()" class="flex-1 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle"></i> Starta inspelning
+                        </button>
+                        <button id="stopRecBtn" onclick="stopAndUpload('${task.id}', ${task.points})" disabled class="flex-1 py-2.5 bg-slate-400 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-not-allowed">
+                            <i class="fa-solid fa-paper-plane"></i> Stoppa & Skicka
+                        </button>
+                    </div>
+                    <p id="recStatus" class="text-xs font-bold text-indigo-600 text-center"></p>
+                </div>
+            `;
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('videoPreview').srcObject = stream;
+                mediaRecorder = new MediaRecorder(stream);
+                
+                recordedChunks = [];
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.start();
+
+                document.getElementById('startRecBtn').disabled = true;
+                document.getElementById('startRecBtn').classList.add('opacity-50', 'cursor-not-allowed');
+                
+                const stopBtn = document.getElementById('stopRecBtn');
+                stopBtn.disabled = false;
+                stopBtn.classList.remove('bg-slate-400', 'cursor-not-allowed');
+                stopBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+
+                document.getElementById('recStatus').innerText = "🔴 Inspelning pågår (Håll din presentation!)...";
+            } catch (err) {
+                alert("Kamera/Mikrofon kunde inte nås. Kontrollera behörigheterna i webbläsaren.");
+            }
+        }
+
+        function stopAndUpload(taskId, points) {
+            if (!mediaRecorder) return;
+            mediaRecorder.stop();
+            document.getElementById('recStatus').innerText = "⏳ Skickar inspelningen till lärarens Google Drive...";
+
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const reader = new FileReader();
+
+                reader.onloadend = async () => {
+                    const base64Data = reader.result.split(',')[1];
+                    const student = state.studentName || "Okand_Elev";
+
+                    try {
+                        if (scriptUrl && !scriptUrl.includes("KLISTRA_IN")) {
+                            await fetch(scriptUrl, {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                fileName: `Spanska_Slutpresentation_${student}_${Date.now()}.webm`,
+                                mimeType: 'video/webm',
+                                fileData: base64Data
+                                })
+                            });
+                        }
+                        document.getElementById('recStatus').innerText = "✓ Inspelningen har skickats!";
+                        setTimeout(() => completeTask(taskId, points), 1200);
+                    } catch (e) {
+                        alert("Inspelningen sparades lokalt, men kunde inte skickas till skriptlänken.");
+                        completeTask(taskId, points);
+                    }
+                };
+                reader.readAsDataURL(blob);
+            };
+        }
+    </script>
+</body>
+</html>
