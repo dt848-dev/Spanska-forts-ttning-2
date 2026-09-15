@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Así es la vida! - Fasta uttryck & Verbalperifraser i spanska</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .task-card { transition: all 0.2s ease-in-out; }
+        .task-card:not(.locked):hover { transform: translateY(-3px); }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-warning {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800 pb-12">
+
+    <!-- TOAST NOTIFICATION FÖR NÄR INKLISTRING BLOCKERAS -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-medium text-sm border border-rose-400">
+        <i class="fa-solid fa-ban text-lg"></i>
+        <span id="toastMessage">Inklistring är avstängd! Du måste skriva svaret själv på spanska.</span>
+    </div>
+
+    <!-- TOP BAR / HEADER -->
+    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-amber-300"></i> ¡Así es la vida! (Spanska)
+                </h1>
+                <p class="text-indigo-200 text-sm">Kommunikativa fasta uttryck: <i>llevar + gerundio, tener que, ir a, soler...</i></p>
+            </div>
+            <!-- Elevprofil & Nollställning -->
+            <div class="flex items-center gap-3">
+                <input type="text" id="studentName" placeholder="Ditt namn..." class="px-3 py-1.5 rounded-lg text-slate-800 text-sm font-medium border-none focus:ring-2 focus:ring-indigo-300 outline-none shadow-inner" oninput="saveName()">
+                <button onclick="resetProgress()" class="text-xs bg-indigo-800 hover:bg-indigo-900 text-indigo-200 px-2.5 py-1.5 rounded transition" title="Nollställ alla poäng">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+
+        <!-- PROGRESS & POÄNGBAR -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Din Progress</span>
+                    <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <span id="scoreText">0</span> / 215 <span class="text-sm font-normal text-slate-500">poäng</span>
+                    </h2>
+                </div>
+                <div id="badgeContainer" class="text-right">
+                    <span id="statusBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-hourglass-start"></i> Börja samla poäng!
+                    </span>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner border border-slate-200">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-500 via-amber-500 to-emerald-500 h-full w-0 transition-all duration-500 rounded-full"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Gör de fyra gröna rätterna för att låsa upp de gula en i taget. Lås därefter upp de röda rätterna!</p>
+        </section>
+
+        <!-- DASHBOARD UPPGIFTER -->
+        <div class="space-y-6">
+
+            <!-- 🟢 GRÖNA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Gröna Rätter <span class="text-xs text-slate-500 font-normal">(Basstrukturer • 4 öppna från start)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="greenTasks"></div>
+            </div>
+
+            <!-- 🟡 GULA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-amber-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Gula Rätter <span class="text-xs text-slate-500 font-normal">(Kommunikativ fördjupning • Låses upp en i taget)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="yellowTasks"></div>
+            </div>
+
+            <!-- 🔴 RÖDA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Röda Rätter <span class="text-xs text-slate-500 font-normal">(Avancerad produktion • Låses upp en i taget)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4" id="redTasks"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- INTERAKTIV MODAL FÖR ÖVNINGAR -->
+    <div id="exerciseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 rounded-t-2xl">
+                <div>
+                    <span id="modalCategory" class="text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800 mt-1"></h2>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">&times;</button>
+            </div>
+            
+            <!-- Modal Content Body -->
+            <div id="modalBody" class="p-6 flex-1 space-y-4">
+                <!-- Dynamiskt innehåll -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 rounded-b-2xl">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition">Stäng</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tasks = [
+            // Gröna rätter
+            { id: 'task1', color: 'green', points: 10, title: '1. Tener + estados', desc: 'Lär dig uttryck som tener frío, tener hambre, tener sueño, tener prisa...', type: 'quiz_tener_exp' },
+            { id: 'task2', color: 'green', points: 10, title: '2. Tener que & Ir a', desc: 'Träna på plikter (tener que) och framtid (ir a + infinitiv).', type: 'quiz_tener_ir' },
+            { id: 'task3', color: 'green', points: 15, title: '3. Estar + gerundio & Acabar de', desc: 'Vad händer just nu vs vad du nyss har gjort.', type: 'quiz_estar_acabar' },
+            { id: 'task4', color: 'green', points: 10, title: '4. Soler & Volver a', desc: 'Vanor (soler) och upprepade handlingar (volver a + infinitiv).', type: 'quiz_soler_volver' },
+            
+            // Gula rätter
+            { id: 'task5', color: 'yellow', points: 15, title: '5. Llevar + tiempo + gerundio', desc: 'Uttryck hur länge du har gjort något (Llevo 2 años estudiando...).', type: 'quiz_llevar_gerundio' },
+            { id: 'task6', color: 'yellow', points: 20, title: '6. Situaciones cotidianas', desc: 'Välj rätt fast uttryck i vardagliga situationer.', type: 'quiz_comm_situations' },
+            { id: 'task7', color: 'yellow', points: 20, title: '7. El Detective Gramatical', desc: 'Finn och rätta felaktiga strukturer i vardagsspanska.', type: 'error_detective' },
+            { id: 'task8', color: 'yellow', points: 20, title: '8. Un día agitado (Kort text)', desc: 'Skriv en text (minst 60 ord) om en stressig dag med fasta uttryck.', type: 'write_short_story' },
+
+            // Röda rätter
+            { id: 'task9', color: 'red', points: 25, title: '9. Chat con un amigo', desc: 'Chatta interaktivt om dina vanor, framtid och hur länge du gjort sakerna.', type: 'chat_sim' },
+            { id: 'task10', color: 'red', points: 30, title: '10. Sluttext: Mi vida y mis rutinas', desc: 'Skriv en utförlig text (minst 300 ord) med alla inlärda fasta uttryck.', type: 'write_full_essay' },
+            { id: 'task11', color: 'red', points: 40, title: '11. Presentación oral', desc: 'Redovisa din text eller spela in en muntlig presentation.', type: 'oral_presentation' }
+        ];
+
+        let state = { points: 0, completed: {}, studentName: '' };
+
+        window.onload = () => { loadState(); renderTasks(); updateUI(); setupGlobalPasteBlocker(); };
+
+        function loadState() {
+            const saved = localStorage.getItem('es_expresiones_fijas_state');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('studentName').value = state.studentName || '';
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('es_expresiones_fijas_state', JSON.stringify(state));
+        }
+
+        function saveName() {
+            state.studentName = document.getElementById('studentName').value;
+            saveState();
+        }
+
+        function resetProgress() {
+            if (confirm("¿Quieres reiniciar tus puntos? (Vill du nollställa alla dina poäng?)")) {
+                state.points = 0;
+                state.completed = {};
+                saveState();
+                renderTasks();
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('scoreText').innerText = state.points;
+            const percentage = Math.min(100, (state.points / 215) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+
+            const badge = document.getElementById('statusBadge');
+            if (state.points >= 180) {
+                badge.className = "bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-trophy text-amber-500"></i> ¡Maestro de la Lengua!`;
+            } else if (state.points >= 90) {
+                badge.className = "bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-fire text-indigo-600"></i> ¡Avanzando a buen ritmo!`;
+            } else {
+                badge.className = "bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> Börja samla poäng!`;
+            }
+        }
+
+        function isTaskUnlocked(index) {
+            if (index <= 3) return true;
+            if (index === 4) {
+                return state.completed[tasks[0].id] && state.completed[tasks[1].id] && state.completed[tasks[2].id] && state.completed[tasks[3].id];
+            }
+            return !!state.completed[tasks[index - 1].id];
+        }
+
+        function renderTasks() {
+            const greenContainer = document.getElementById('greenTasks');
+            const yellowContainer = document.getElementById('yellowTasks');
+            const redContainer = document.getElementById('redTasks');
+
+            greenContainer.innerHTML = ''; yellowContainer.innerHTML = ''; redContainer.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const isDone = !!state.completed[task.id];
+                const unlocked = isTaskUnlocked(index);
+
+                const card = document.createElement('div');
+                let badgeColor = task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
+
+                if (!unlocked) {
+                    card.className = "task-card locked bg-slate-50 p-4 rounded-xl border border-slate-200 opacity-60 flex flex-col justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                <span class="text-slate-400 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-lock"></i> Låst</span>
+                            </div>
+                            <h4 class="font-bold text-slate-700 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-400 mb-3">${task.desc}</p>
+                        </div>
+                        <button disabled class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg bg-slate-200 text-slate-400 cursor-not-allowed">
+                            🔒 Slutför tidigare uppgift
+                        </button>
+                    `;
+                } else {
+                    card.className = `task-card bg-white p-4 rounded-xl border ${isDone ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'} shadow-sm flex flex-col justify-between`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="${badgeColor} text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                ${isDone ? '<span class="text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Hecho</span>' : ''}
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-500 mb-3">${task.desc}</p>
+                        </div>
+                        <button onclick="openTask('${task.id}')" class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg transition ${isDone ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
+                            ${isDone ? 'Gör om' : 'Starta'}
+                        </button>
+                    `;
+                }
+
+                if (task.color === 'green') greenContainer.appendChild(card);
+                if (task.color === 'yellow') yellowContainer.appendChild(card);
+                if (task.color === 'red') redContainer.appendChild(card);
+            });
+        }
+
+        function openTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('modalTitle').innerText = task.title;
+            const catBadge = document.getElementById('modalCategory');
+            catBadge.innerText = `+${task.points} Poäng`;
+            catBadge.className = `text-xs font-bold px-2.5 py-0.5 rounded-full ${task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            switch(task.type) {
+                case 'quiz_tener_exp': renderQuizTenerExp(modalBody, task); break;
+                case 'quiz_tener_ir': renderQuizTenerIr(modalBody, task); break;
+                case 'quiz_estar_acabar': renderQuizEstarAcabar(modalBody, task); break;
+                case 'quiz_soler_volver': renderQuizSolerVolver(modalBody, task); break;
+                case 'quiz_llevar_gerundio': renderQuizLlevarGerundio(modalBody, task); break;
+                case 'quiz_comm_situations': renderQuizCommSituations(modalBody, task); break;
+                case 'error_detective': renderErrorDetective(modalBody, task); break;
+                case 'write_short_story': renderWriteShortStory(modalBody, task); break;
+                case 'chat_sim': renderChatSim(modalBody, task); break;
+                case 'write_full_essay': renderWriteFullEssay(modalBody, task); break;
+                case 'oral_presentation': renderOralPresentation(modalBody, task); break;
+            }
+
+            document.getElementById('exerciseModal').classList.remove('hidden');
+        }
+
+        function closeModal() { 
+            document.getElementById('exerciseModal').classList.add('hidden'); 
+        }
+
+        function completeTask(taskId, points) {
+            const isFirstTime = !state.completed[taskId];
+            if (isFirstTime) {
+                state.points += points;
+                state.completed[taskId] = true;
+                saveState();
+                updateUI();
+                renderTasks();
+                confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+            }
+            closeModal();
+        }
+
+        function setupGlobalPasteBlocker() {
+            document.addEventListener('paste', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    e.preventDefault();
+                    e.target.classList.add('shake-warning');
+                    setTimeout(() => e.target.classList.remove('shake-warning'), 500);
+                    showToast("⛔ ¡Sin trampas! Skriv svaret själv på spanska istället för att klistra in.");
+                }
+            }, true);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function norm(s) { 
+            return s.trim().toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, ' '); 
+        }
+
+        function toggleHint(hintId) {
+            const elem = document.getElementById(hintId);
+            if (elem) elem.classList.toggle('hidden');
+        }
+
+        // 🟢 GRÖN 1: Tener + estados
+        function renderQuizTenerExp(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Fyll i rätt ord efter verbet <b>tener</b> (frío, hambre, sueño, prisa, miedo, razón):</p>
+                <div class="space-y-3 text-xs">
+                    <div>1. No he comido nada hoy. Tengo mucho <input type="text" id="ten1" placeholder="Skriv ord..." class="p-1 border rounded w-36">.</div>
+                    <div>2. Es invierno y no llevo chaqueta. Tengo <input type="text" id="ten2" placeholder="Skriv ord..." class="p-1 border rounded w-36">.</div>
+                    <div>3. El autobús sale en 2 minutos. ¡Tenemos <input type="text" id="ten3" placeholder="Skriv ord..." class="p-1 border rounded w-36">!</div>
+                    <div>4. Son las 11 de la noche y quiero dormir. Tengo <input type="text" id="ten4" placeholder="Skriv ord..." class="p-1 border rounded w-36">.</div>
+                    <div>5. No me gustan las películas de terror porque tengo <input type="text" id="ten5" placeholder="Skriv ord..." class="p-1 border rounded w-36">.</div>
+                    <div>6. Sí, es verdad, tú tienes <input type="text" id="ten6" placeholder="Skriv ord..." class="p-1 border rounded w-36"> (du har rätt).</div>
+
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="checkQuizTenerExp('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta svar</button>
+                        <button onclick="toggleHint('hintTener')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp</button>
+                    </div>
+
+                    <p id="hintTener" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden">
+                        <b>Ordlista:</b> <i>hambre</i> (hungrig), <i>frío</i> (fryser), <i>prisa</i> (ha bråttom), <i>sueño</i> (trött/sömnig), <i>miedo</i> (rädd), <i>razón</i> (ha rätt).
+                    </p>
+                    <p id="tenerRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkQuizTenerExp(taskId, points) {
+            const t1 = norm(document.getElementById('ten1').value) === 'hambre';
+            const t2 = norm(document.getElementById('ten2').value) === 'frio';
+            const t3 = norm(document.getElementById('ten3').value) === 'prisa';
+            const t4 = norm(document.getElementById('ten4').value) === 'sueno';
+            const t5 = norm(document.getElementById('ten5').value) === 'miedo';
+            const t6 = norm(document.getElementById('ten6').value) === 'razon';
+
+            if (t1 && t2 && t3 && t4 && t5 && t6) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('tenerRes');
+                res.innerText = "Några svar är inte helt rätt. Kontrollera ordlistan och försök igen!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 2: Tener que & Ir a
+        function renderQuizTenerIr(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Fyll i rätt böjd form av <b>tener que</b> (måste) eller <b>ir a</b> (ska) + infinitiv:</p>
+                <div class="space-y-3 text-xs">
+                    <div>1. Mañana (jag ska) <input type="text" id="ti1" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> para el examen.</div>
+                    <div>2. Hoy (vi måste) <input type="text" id="ti2" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> limpiar la casa.</div>
+                    <div>3. ¿Qué (du ska) <input type="text" id="ti3" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> hacer este fin de semana?</div>
+                    <div>4. Mis amigos (måste) <input type="text" id="ti4" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> trabajar esta tarde.</div>
+                    <div>5. Él (ska) <input type="text" id="ti5" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> comprar la comida para la fiesta.</div>
+
+                    <button onclick="checkQuizTenerIr('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition mt-2">Rätta övning</button>
+                    <p id="tenerIrRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkQuizTenerIr(taskId, points) {
+            const v1 = norm(document.getElementById('ti1').value) === 'voy a estudiar';
+            const v2 = norm(document.getElementById('ti2').value) === 'tenemos que';
+            const v3 = norm(document.getElementById('ti3').value) === 'vas a';
+            const v4 = norm(document.getElementById('ti4').value) === 'tienen que';
+            const v5 = norm(document.getElementById('ti5').value) === 'va a';
+
+            if (v1 && v2 && v3 && v4 && v5) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('tenerIrRes');
+                res.innerText = "Kom ihåg: TENER QUE (tengo que, tienes que, tenemos que...) och IR A (voy a, vas a, va a...).";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 3: Estar + gerundio & Acabar de
+        function renderQuizEstarAcabar(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Fyll i rätt form av <b>estar + gerundio</b> (pågår nu) eller <b>acabar de + infinitivo</b> (alldeles nyss):</p>
+                <div class="space-y-3 text-xs">
+                    <div>1. ¡Mira! María (håller på att dansa) <input type="text" id="ea1" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> en la pista.</div>
+                    <div>2. No tengo hambre porque (jag har nyss ätit) <input type="text" id="ea2" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> una manzana.</div>
+                    <div>3. Ahora mismo nosotros (håller på att studera) <input type="text" id="ea3" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> español.</div>
+                    <div>4. Ellos (har nyss anlänt) <input type="text" id="ea4" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> a la estación.</div>
+                    <div>5. ¿Qué (håller du på att göra) <input type="text" id="ea5" placeholder="Skriv på spanska..." class="p-1 border rounded w-48"> en este momento?</div>
+
+                    <button onclick="checkQuizEstarAcabar('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition mt-2">Rätta övning</button>
+                    <p id="eaRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkQuizEstarAcabar(taskId, points) {
+            const v1 = norm(document.getElementById('ea1').value) === 'esta bailando';
+            const v2 = norm(document.getElementById('ea2').value) === 'acabo de comer';
+            const v3 = norm(document.getElementById('ea3').value) === 'estamos estudiando';
+            const v4 = norm(document.getElementById('ea4').value) === 'acaban de llegar';
+            const v5 = norm(document.getElementById('ea5').value) === 'estas haciendo';
+
+            if (v1 && v2 && v3 && v4 && v5) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('eaRes');
+                res.innerText = "Kolla formerna! Gerundio: -ando / -iendo. Acabar de + infinitiv i grundform.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 4: Soler & Volver a
+        function renderQuizSolerVolver(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Fyll i <b>soler</b> (bruka) eller <b>volver a</b> (göra om/igen):</p>
+                <div class="space-y-3 text-xs">
+                    <div>1. Yo (brukar) <input type="text" id="sv1" placeholder="Skriv ord..." class="p-1 border rounded w-32"> desayunar a las ocho.</div>
+                    <div>2. No entiendo el texto, voy a (läsa om / läsa igen) <input type="text" id="sv2" placeholder="Skriv på spanska..." class="p-1 border rounded w-40"> la página.</div>
+                    <div>3. ¿Vosotros (brukar) <input type="text" id="sv3" placeholder="Skriv ord..." class="p-1 border rounded w-32"> jugar al fútbol los sábados?</div>
+                    <div>4. Ella (börjar om/igen) <input type="text" id="sv4" placeholder="Skriv på spanska..." class="p-1 border rounded w-40"> escribir la carta.</div>
+                    <div>5. Mis padres (brukar) <input type="text" id="sv5" placeholder="Skriv ord..." class="p-1 border rounded w-32"> viajar a España en verano.</div>
+
+                    <button onclick="checkQuizSolerVolver('${task.id}', ${task.points})" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition mt-2">Rätta övning</button>
+                    <p id="svRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkQuizSolerVolver(taskId, points) {
+            const v1 = norm(document.getElementById('sv1').value) === 'suelo';
+            const v2 = norm(document.getElementById('sv2').value) === 'volver a leer';
+            const v3 = norm(document.getElementById('sv3').value) === 'soleis';
+            const v4 = norm(document.getElementById('sv4').value) === 'vuelve a';
+            const v5 = norm(document.getElementById('sv5').value) === 'suelen';
+
+            if (v1 && v2 && v3 && v4 && v5) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('svRes');
+                res.innerText = "Kolla verbböjningen! Soler: suelo, sueles, suele, solemos, soléis, suelen. Volver a + infinitivo.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 5: Llevar + tiempo + gerundio
+        function renderQuizLlevarGerundio(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Konstruktionen <b>llevar + tidsuttryck + gerundio</b> används för att säga hur länge man har gjort något:</p>
+                <div class="bg-indigo-50 border border-indigo-200 p-2.5 rounded-lg text-xs text-indigo-900 mb-3">
+                    Exempel: <i>Llevo dos años estudiando español</i> = Jag har pluggat spanska i två år.
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div>1. Jag har bott här i tre år: <br> <input type="text" id="llg1" placeholder="Översätt till spanska..." class="w-full p-2 border rounded"></div>
+                    <div>2. Vi har väntat i två timmar: <br> <input type="text" id="llg2" placeholder="Översätt till spanska..." class="w-full p-2 border rounded"></div>
+                    <div>3. Hur länge har du tränat? <br> <input type="text" id="llg3" placeholder="Översätt till spanska..." class="w-full p-2 border rounded"></div>
+                    <div>4. Hon har jobbat där i fem månader: <br> <input type="text" id="llg4" placeholder="Översätt till spanska..." class="w-full p-2 border rounded"></div>
+
+                    <button onclick="checkQuizLlevarGerundio('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition mt-2">Rätta meningar</button>
+                    <p id="llgRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkQuizLlevarGerundio(taskId, points) {
+            const v1 = norm(document.getElementById('llg1').value);
+            const v2 = norm(document.getElementById('llg2').value);
+            const v3 = norm(document.getElementById('llg3').value);
+            const v4 = norm(document.getElementById('llg4').value);
+
+            const c1 = v1.includes('llevo tres anos viviendo') || v1.includes('llevo 3 anos viviendo');
+            const c2 = v2.includes('llevamos dos horas esperando') || v2.includes('llevamos 2 horas esperando');
+            const c3 = v3.includes('llevas entrenando') || v3.includes('cuanto tiempo llevas');
+            const c4 = v4.includes('lleva cinco meses trabajando') || v4.includes('lleva 5 meses trabajando');
+
+            if (c1 && c2 && c3 && c4) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('llgRes');
+                res.innerText = "Kolla mönstret: LLEVAR (böjt) + tid + GERUNDIO (-ando / -iendo). Ex: 'Lleva cinco meses trabajando'.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 6: Situaciones cotidianas
+        function renderQuizCommSituations(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Välj eller skriv rätt fast uttryck för situationen:</p>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <p class="font-bold text-slate-700">1. Du står utanför bussen och klockan är mycket. Vad säger du?</p>
+                        <input type="text" id="sit1" placeholder="Skriv ditt svar på spanska..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700">2. Du har precis avslutat din läxa. Vad säger du?</p>
+                        <input type="text" id="sit2" placeholder="Skriv ditt svar på spanska..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700">3. Någon frågar hur länge du spelat gitarr (sedan 1 år tillbaka):</p>
+                        <input type="text" id="sit3" placeholder="Skriv ditt svar på spanska..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700">4. Du brukar äta lunch klockan ett. Hur uttrycker du det?</p>
+                        <input type="text" id="sit4" placeholder="Skriv ditt svar på spanska..." class="w-full p-2 border rounded">
+                    </div>
+
+                    <button onclick="checkQuizCommSituations('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition mt-2">Rätta situationer</button>
+                    <p id="sitRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkQuizCommSituations(taskId, points) {
+            const s1 = norm(document.getElementById('sit1').value);
+            const s2 = norm(document.getElementById('sit2').value);
+            const s3 = norm(document.getElementById('sit3').value);
+            const s4 = norm(document.getElementById('sit4').value);
+
+            const c1 = s1.includes('prisa') || s1.includes('tengo que');
+            const c2 = s2.includes('acabo de');
+            const c3 = s3.includes('llevo') && (s3.includes('ano') || s3.includes('tocando'));
+            const c4 = s4.includes('suelo');
+
+            if (c1 && c2 && c3 && c4) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('sitRes');
+                res.innerText = "Se till att du använder nyckelorden: 1. prisa/tengo que, 2. acabo de, 3. llevo ... tocando, 4. suelo.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 7: El Detective Gramatical
+        function renderErrorDetective(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Meningarna nedan innehåller felaktiga strukturer. Skriv om dem korrekt på spanska:</p>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">1. Fel: "Llevo tres años para estudiar español."</p>
+                        <input type="text" id="err1" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">2. Fel: "Yo tengo frío y quiero comer un bocadillo." (Fel uttryck för hungrig)</p>
+                        <input type="text" id="err2" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">3. Fel: "Voy estudiar la lección ahora."</p>
+                        <input type="text" id="err3" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">4. Fel: "Acabo a terminar mi examen."</p>
+                        <input type="text" id="err4" placeholder="Skriv den korrekta meningen..." class="w-full p-2 border rounded">
+                    </div>
+
+                    <button onclick="checkErrorDetective('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition mt-2">Rätta detektiven</button>
+                    <p id="errRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkErrorDetective(taskId, points) {
+            const e1 = norm(document.getElementById('err1').value);
+            const e2 = norm(document.getElementById('err2').value);
+            const e3 = norm(document.getElementById('err3').value);
+            const e4 = norm(document.getElementById('err4').value);
+
+            const c1 = e1.includes('llevo tres anos estudiando') || e1.includes('llevo 3 anos estudiando');
+            const c2 = e2.includes('tengo hambre');
+            const c3 = e3.includes('voy a estudiar');
+            const c4 = e4.includes('acabo de terminar');
+
+            if (c1 && c2 && c3 && c4) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('errRes');
+                res.innerText = "Kolla noga: 1. 'llevo ... estudiando', 2. 'tengo hambre', 3. 'voy a estudiar', 4. 'acabo de terminar'.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 8: Un día agitado (Kort text)
+        function renderWriteShortStory(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Skriv en kort text (<b>minst 60 ord</b>) om en hektisk dag. Använd minst 4 av följande fasta uttryck:</p>
+                <div class="text-xs bg-slate-50 p-2 border rounded-lg mb-3 font-semibold text-slate-700">
+                    tener que | ir a + inf | tener prisa/sueño/hambre | llevar + gerundio | acabar de + inf | soler
+                </div>
+
+                <textarea id="shortText" rows="5" oninput="countWords('shortText', 'shortCounter')" placeholder="Hoy es un día muy agitado. Por la mañana tengo que levantarme temprano..." class="w-full p-3 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-300"></textarea>
+                
+                <div class="flex justify-between items-center text-xs mt-1 mb-3">
+                    <span id="shortCounter" class="font-bold text-slate-500">0 / 60 ord</span>
+                    <span class="text-slate-400">Skriv direkt på spanska!</span>
+                </div>
+
+                <button onclick="checkShortStory('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition">Lämna in text</button>
+                <p id="shortRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function countWords(inputId, counterId) {
+            const txt = document.getElementById(inputId).value.trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+            document.getElementById(counterId).innerText = `${words} ord`;
+        }
+
+        function checkShortStory(taskId, points) {
+            const txt = document.getElementById('shortText').value.trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+
+            if (words >= 60) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('shortRes');
+                res.innerText = `Din text har bara ${words} ord. Skriv minst 60 ord för att slutföra!`;
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🔴 RÖD 9: Chat simulerat
+        let chatStep = 0;
+        function renderChatSim(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Chatta med din spanska vän Sofia och berätta om ditt liv och dina vanor:</p>
+                
+                <div id="chatBox" class="bg-slate-50 border rounded-xl p-3 h-64 overflow-y-auto space-y-3 text-xs mb-3 flex flex-col">
+                    <div class="bg-indigo-100 text-indigo-900 p-2.5 rounded-xl max-w-[80%] self-start">
+                        <b>Sofia:</b> ¡Hola! ¿Qué estás haciendo ahora mismo? Y ¿cuánto tiempo llevas estudiando español?
+                    </div>
+                </div>
+
+                <div class="flex gap-2 text-xs">
+                    <input type="text" id="chatInput" placeholder="Svara med estar+gerundio och llevar+gerundio..." class="flex-1 p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-rose-300">
+                    <button onclick="sendChatMessage('${task.id}', ${task.points})" class="px-4 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">Sänd</button>
+                </div>
+            `;
+            chatStep = 0;
+        }
+
+        function sendChatMessage(taskId, points) {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const chatBox = document.getElementById('chatBox');
+            
+            const userBubble = document.createElement('div');
+            userBubble.className = "bg-rose-600 text-white p-2.5 rounded-xl max-w-[80%] self-end";
+            userBubble.innerHTML = `<b>Tú:</b> ${msg}`;
+            chatBox.appendChild(userBubble);
+
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            chatStep++;
+
+            setTimeout(() => {
+                const sofiaBubble = document.createElement('div');
+                sofiaBubble.className = "bg-indigo-100 text-indigo-900 p-2.5 rounded-xl max-w-[80%] self-start";
+
+                if (chatStep === 1) {
+                    sofiaBubble.innerHTML = `<b>Sofia:</b> ¡Qué interesante! ¿Y qué sueles hacer después de tus clases o del trabajo?`;
+                } else if (chatStep === 2) {
+                    sofiaBubble.innerHTML = `<b>Sofia:</b> ¡Genial! ¿Y qué tienes que hacer hoy más tarde? ¿Tienes muchos deberes o planes?`;
+                } else if (chatStep === 3) {
+                    sofiaBubble.innerHTML = `<b>Sofia:</b> ¡Entiendo! ¿Y qué vas a hacer este fin de semana? ¿Tienes algún plan divertido?`;
+                } else if (chatStep >= 4) {
+                    sofiaBubble.innerHTML = `<b>Sofia:</b> ¡Muchas gracias por charlar conmigo! Hablas español súper bien. ¡Hasta pronto! 👋`;
+                    chatBox.appendChild(sofiaBubble);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    setTimeout(() => {
+                        alert("¡Excelente conversación! Uppgiften är slutförd.");
+                        completeTask(taskId, points);
+                    }, 1000);
+                    return;
+                }
+
+                chatBox.appendChild(sofiaBubble);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 800);
+        }
+
+        // 🔴 RÖD 10: Sluttext - Mi vida y mis rutinas (300 ord)
+        function renderWriteFullEssay(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Skriv en utförlig text om ditt liv, dina rutiner och framtid (<b>minst 300 ord</b>) på spanska. Inkludera samtliga strukturtyper:</p>
+
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-900 mb-3 space-y-1">
+                    <p class="font-bold">Checklista för uttryck du ska använda:</p>
+                    <ul class="list-disc pl-4 space-y-0.5">
+                        <li><b>1. Tener + estados:</b> <i>tener frío, hambre, sueño, prisa, razón, miedo...</i></li>
+                        <li><b>2. Plikter & Framtid:</b> <i>tener que + infinitivo</i> och <i>ir a + infinitivo</i>.</li>
+                        <li><b>3. Pågående & Nyss gjort:</b> <i>estar + gerundio</i> och <i>acabar de + infinitivo</i>.</li>
+                        <li><b>4. Vanor & Upprepning:</b> <i>soler + infinitivo</i> och <i>volver a + infinitivo</i>.</li>
+                        <li><b>5. Tidsuttryck:</b> <i>llevar + [tiempo] + gerundio</i> (t.ex. Llevo dos años viviendo/estudiando...).</li>
+                    </ul>
+                </div>
+
+                <textarea id="fullEssay" rows="10" oninput="countWords('fullEssay', 'essayCounter')" placeholder="Me llamo... y voy a contar sobre mi vida diaria. Normalmente suelo levantarme a las siete..." class="w-full p-3 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-rose-300"></textarea>
+
+                <div class="flex justify-between items-center text-xs mt-1 mb-3">
+                    <span id="essayCounter" class="font-bold text-indigo-700 text-sm">0 / 300 ord</span>
+                    <span class="text-slate-400">Kom ihåg: Skriv själv på spanska utan översättningsverktyg!</span>
+                </div>
+
+                <button onclick="checkFullEssay('${task.id}', ${task.points})" class="w-full py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">Lämna in sluttext</button>
+                <p id="essayRes" class="text-xs font-bold text-rose-600 text-center hidden mt-2"></p>
+            `;
+        }
+
+        function checkFullEssay(taskId, points) {
+            const txt = document.getElementById('fullEssay').value.trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+
+            if (words >= 300) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('essayRes');
+                res.innerText = `Din text har hittills ${words} ord. Du behöver nå minst 300 ord för att bli godkänd!`;
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🔴 RÖD 11: Presentación oral
+        function renderOralPresentation(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Redovisa din text eller berätta fritt om ditt liv på spanska med hjälp av de fasta uttrycken.</p>
+                
+                <div class="bg-slate-50 border rounded-xl p-4 text-center space-y-3">
+                    <i class="fa-solid fa-microphone text-4xl text-rose-500"></i>
+                    <p class="text-xs text-slate-500">Prata inför klassen eller läraren i 1–2 minuter, eller spela in en ljudfil där du använder uttryck som <i>soler, ir a, tener que, llevar + gerundio</i>.</p>
+                    
+                    <div class="pt-2">
+                        <button onclick="completeTask('${task.id}', ${task.points})" class="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition text-xs">
+                            <i class="fa-solid fa-check"></i> Jag har genomfört min muntliga presentation
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
