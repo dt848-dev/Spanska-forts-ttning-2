@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>En la Consulta del Médico - Español 4</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .task-card { transition: all 0.2s ease-in-out; }
+        .task-card:not(.locked):hover { transform: translateY(-3px); }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-warning {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800 pb-12">
+
+    <!-- TOAST NOTIFICATION FOR PASTE BLOCKER -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-medium text-sm border border-rose-400">
+        <i class="fa-solid fa-ban text-lg"></i>
+        <span id="toastMessage">Inklistring är avstängd! Du måste skriva svaret själv på spanska.</span>
+    </div>
+
+    <!-- TOP BAR / HEADER -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 border-b border-emerald-500/30">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2 text-emerald-400">
+                    <i class="fa-solid fa-user-doctor text-amber-400"></i> En la Consulta del Médico (B1)
+                </h1>
+                <p class="text-slate-300 text-xs mt-0.5">Kommunikation på vårdcentralen: Symptom, diagnos, recept och läkarbesök</p>
+            </div>
+            <!-- Elevprofil & Nollställning -->
+            <div class="flex items-center gap-3">
+                <input type="text" id="studentName" placeholder="Ditt namn..." class="px-3 py-1.5 rounded-lg text-slate-800 text-sm font-medium border-none focus:ring-2 focus:ring-emerald-300 outline-none shadow-inner" oninput="saveName()">
+                <button onclick="resetProgress()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition border border-slate-700" title="Nollställ alla poäng">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 mt-6">
+
+        <!-- PROGRESS & POÄNGBAR -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Din Progress (Mål: 150p+)</span>
+                    <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <span id="scoreText">0</span> / 260 <span class="text-sm font-normal text-slate-500">poäng</span>
+                    </h2>
+                </div>
+                <div id="badgeContainer" class="text-right">
+                    <span id="statusBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-hourglass-start"></i> Börja samla poäng!
+                    </span>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner border border-slate-200">
+                <div id="progressBar" class="bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 h-full w-0 transition-all duration-500 rounded-full"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">
+                De 4 gröna rätterna är öppna från start. Slutför dem för att låsa upp gula och röda rätter!
+            </p>
+        </section>
+
+        <!-- DASHBOARD UPPGIFTER -->
+        <div class="space-y-8">
+
+            <!-- 🟢 GRÖNA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">🟢 Gröna Rätter (10–15 p) <span class="text-xs text-slate-500 font-normal">• Bassteg • Symptom, kroppsdelar & gramatikkärna</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="greenTasks"></div>
+            </div>
+
+            <!-- 🟡 GULA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-amber-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">🟡 Gula Rätter (20–25 p) <span class="text-xs text-slate-500 font-normal">• Medelenergi • Läsförståelse, feldetektiv & skriftlig anamnes</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="yellowTasks"></div>
+            </div>
+
+            <!-- 🔴 RÖDA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">🔴 Röda Rätter (30 p) <span class="text-xs text-slate-500 font-normal">• Hög energi • Muntligt rollspel, chattsimulering & slutprov</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="redTasks"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- INTERAKTIV MODAL FÖR ÖVNINGAR -->
+    <div id="exerciseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 rounded-t-2xl">
+                <div>
+                    <span id="modalCategory" class="text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800 mt-1"></h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleHelp()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-lightbulb"></i> Hjälp
+                    </button>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">&times;</button>
+                </div>
+            </div>
+            
+            <!-- Hjälpruta / Frasbank (Dold som standard) -->
+            <div id="helpBox" class="hidden bg-amber-50 border-b border-amber-200 p-4 text-xs text-slate-700">
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-circle-info text-amber-600 text-sm mt-0.5"></i>
+                    <div id="helpContent">
+                        <!-- Dynamiskt innehåll för hjälp -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div id="modalBody" class="p-6 flex-1 space-y-4">
+                <!-- Dynamiskt innehåll -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 rounded-b-2xl">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition">Stäng</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tasks = [
+            // 🟢 GRÖNA RÄTTER (1-4)
+            { id: 'task1', color: 'green', points: 10, title: '1. Vocabulario médico', desc: 'Lär dig nyckelord för symptom, medicin och besök.', type: 'quiz_vocab_medico' },
+            { id: 'task2', color: 'green', points: 10, title: '2. Me duele / Tengo / Estoy', desc: 'Träna på att skilja på verben för att uttrycka mående.', type: 'quiz_verbos_dolor' },
+            { id: 'task3', color: 'green', points: 15, title: '3. Duración: Desde / Desde hace', desc: 'Ange hur länge du haft ett symptom (desde hace 3 días).', type: 'quiz_duracion_sintomas' },
+            { id: 'task4', color: 'green', points: 15, title: '4. Consejos del médico', desc: 'Förstå läkarens råd och instruktioner (tomar, descansar...).', type: 'quiz_consejos_medico' },
+
+            // 🟡 GULA RÄTTER (5-8)
+            { id: 'task5', color: 'yellow', points: 20, title: '5. Lectura: Prospecto y Receta', desc: 'Läs och förstå instruktioner från en läkare och ett läkemedel.', type: 'read_prospecto' },
+            { id: 'task6', color: 'yellow', points: 25, title: '6. Mensaje al Centro de Salud', desc: 'Skriv ett meil/meddelande och boka tid hos läkaren (min 40 ord).', type: 'write_email_cita' },
+            { id: 'task7', color: 'yellow', points: 20, title: '7. Detective Gramatical Médico', desc: 'Finn och korrigera vanliga fel i medicinska uttryck.', type: 'error_detective_medico' },
+            { id: 'task8', color: 'yellow', points: 25, title: '8. Diálogo: En la consulta', desc: 'Fyll i luckorna i en realistisk dialog mellan läkare och patient.', type: 'dialogo_medico_fill' },
+
+            // 🔴 RÖDA RÄTTER (9-12)
+            { id: 'task9', color: 'red', points: 30, title: '9. Simulación: Chat con el Doctor', desc: 'Chatta i realtid med en virtuell läkare om dina symptom.', type: 'chat_sim_medico' },
+            { id: 'task10', color: 'red', points: 30, title: '10. Guion del Juego de Rol', desc: 'Skriv ditt manus för rollspelet på vårdcentralen (min 60 ord).', type: 'prep_guion_consulta' },
+            { id: 'task11', color: 'red', points: 30, title: '11. Práctica de Rol en Parejas', desc: 'Genomför rollspelet i par (läkare & patient) och logga feedback.', type: 'eval_rollspel_parejas' },
+            { id: 'task12', color: 'red', points: 30, title: '12. Evaluación Final: Consulta Oral', desc: 'Genomför din avslutande muntliga examination hos läkaren.', type: 'final_oral_medico' }
+        ];
+
+        let state = { points: 0, completed: {}, studentName: '' };
+        let currentTaskType = '';
+
+        window.onload = () => { loadState(); renderTasks(); updateUI(); setupGlobalPasteBlocker(); };
+
+        function loadState() {
+            const saved = localStorage.getItem('es_medico_state');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('studentName').value = state.studentName || '';
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('es_medico_state', JSON.stringify(state));
+        }
+
+        function saveName() {
+            state.studentName = document.getElementById('studentName').value;
+            saveState();
+        }
+
+        function resetProgress() {
+            if (confirm("¿Quieres reiniciar tus puntos? (Vill du nollställa alla dina poäng?)")) {
+                state.points = 0;
+                state.completed = {};
+                saveState();
+                renderTasks();
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('scoreText').innerText = state.points;
+            const percentage = Math.min(100, (state.points / 260) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+
+            const badge = document.getElementById('statusBadge');
+            if (state.points >= 200) {
+                badge.className = "bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-trophy text-amber-500"></i> ¡Paciente Experto/a!`;
+            } else if (state.points >= 100) {
+                badge.className = "bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-check-double text-indigo-600"></i> Preparado/a para el examen!`;
+            } else {
+                badge.className = "bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> Börja samla poäng!`;
+            }
+        }
+
+        function isTaskUnlocked(index) {
+            if (index < 4) return true;
+            return !!state.completed[tasks[index - 1].id];
+        }
+
+        function renderTasks() {
+            const greenContainer = document.getElementById('greenTasks');
+            const yellowContainer = document.getElementById('yellowTasks');
+            const redContainer = document.getElementById('redTasks');
+
+            greenContainer.innerHTML = ''; yellowContainer.innerHTML = ''; redContainer.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const isDone = !!state.completed[task.id];
+                const unlocked = isTaskUnlocked(index);
+
+                const card = document.createElement('div');
+                let badgeColor = task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
+
+                if (!unlocked) {
+                    card.className = "task-card locked bg-slate-50 p-4 rounded-xl border border-slate-200 opacity-60 flex flex-col justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                <span class="text-slate-400 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-lock"></i> Låst</span>
+                            </div>
+                            <h4 class="font-bold text-slate-700 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-400 mb-3">${task.desc}</p>
+                        </div>
+                        <button disabled class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg bg-slate-200 text-slate-400 cursor-not-allowed">
+                            🔒 Slutför tidigare uppgift
+                        </button>
+                    `;
+                } else {
+                    card.className = `task-card bg-white p-4 rounded-xl border ${isDone ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'} shadow-sm flex flex-col justify-between`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="${badgeColor} text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                ${isDone ? '<span class="text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Hecho</span>' : ''}
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-500 mb-3">${task.desc}</p>
+                        </div>
+                        <button onclick="openTask('${task.id}')" class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg transition ${isDone ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'}">
+                            ${isDone ? 'Gör om' : 'Starta'}
+                        </button>
+                    `;
+                }
+
+                if (task.color === 'green') greenContainer.appendChild(card);
+                if (task.color === 'yellow') yellowContainer.appendChild(card);
+                if (task.color === 'red') redContainer.appendChild(card);
+            });
+        }
+
+        function toggleHelp() {
+            const helpBox = document.getElementById('helpBox');
+            helpBox.classList.toggle('hidden');
+        }
+
+        function setHelpText(htmlContent) {
+            document.getElementById('helpContent').innerHTML = htmlContent;
+            document.getElementById('helpBox').classList.add('hidden'); // standard dold vid öppning
+        }
+
+        function openTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            currentTaskType = task.type;
+            document.getElementById('modalTitle').innerText = task.title;
+            const catBadge = document.getElementById('modalCategory');
+            catBadge.innerText = `+${task.points} Poäng`;
+            catBadge.className = `text-xs font-bold px-2.5 py-0.5 rounded-full ${task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            switch(task.type) {
+                case 'quiz_vocab_medico': renderQuizVocabMedico(modalBody, task); break;
+                case 'quiz_verbos_dolor': renderQuizVerbosDolor(modalBody, task); break;
+                case 'quiz_duracion_sintomas': renderQuizDuracionSintomas(modalBody, task); break;
+                case 'quiz_consejos_medico': renderQuizConsejosMedico(modalBody, task); break;
+                case 'read_prospecto': renderReadProspecto(modalBody, task); break;
+                case 'write_email_cita': renderWriteEmailCita(modalBody, task); break;
+                case 'error_detective_medico': renderErrorDetectiveMedico(modalBody, task); break;
+                case 'dialogo_medico_fill': renderDialogoMedicoFill(modalBody, task); break;
+                case 'chat_sim_medico': renderChatSimMedico(modalBody, task); break;
+                case 'prep_guion_consulta': renderPrepGuionConsulta(modalBody, task); break;
+                case 'eval_rollspel_parejas': renderEvalRollspelParejas(modalBody, task); break;
+                case 'final_oral_medico': renderFinalOralMedico(modalBody, task); break;
+            }
+
+            document.getElementById('exerciseModal').classList.remove('hidden');
+        }
+
+        function closeModal() { 
+            document.getElementById('exerciseModal').classList.add('hidden'); 
+        }
+
+        function completeTask(taskId, points) {
+            const isFirstTime = !state.completed[taskId];
+            if (isFirstTime) {
+                state.points += points;
+                state.completed[taskId] = true;
+                saveState();
+                updateUI();
+                renderTasks();
+                confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+            }
+            closeModal();
+        }
+
+        function setupGlobalPasteBlocker() {
+            document.addEventListener('paste', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    e.preventDefault();
+                    e.target.classList.add('shake-warning');
+                    setTimeout(() => e.target.classList.remove('shake-warning'), 500);
+                    showToast("⛔ Skriv svaret själv på spanska istället för att klistra in.");
+                }
+            }, true);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function norm(s) { 
+            return s.trim().toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, ' '); 
+        }
+
+        function countWords(inputId, counterId) {
+            const txt = document.getElementById(inputId).value.trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+            document.getElementById(counterId).innerText = `${words} ord`;
+        }
+
+        // ==========================================
+        // 🟢 GRÖNA RÄTTER (1 - 4 UTÖKADE)
+        // ==========================================
+
+        function renderQuizVocabMedico(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Ordlista för vokabulär:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <li><b>dolor de cabeza</b> = huvudvärk</li>
+                    <li><b>fiebre</b> = feber | <b>receta</b> = recept</li>
+                    <li><b>mareo</b> = yrsel | <b>tos</b> = hosta</li>
+                    <li><b>dolor de garganta</b> = halsont</li>
+                    <li><b>dolor de estomago</b> = ont i magen</li>
+                    <li><b>medicamento</b> = medicin/läkemedel</li>
+                </ul>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Översätt de 8 medicinska uttrycken till spanska:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div>1. Huvudvärk: <input type="text" id="vm1" placeholder="dolor de..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>2. Feber: <input type="text" id="vm2" placeholder="Skriv på spanska..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>3. Läkarrecept: <input type="text" id="vm3" placeholder="Skriv på spanska..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>4. Yrsel / Snurr i huvudet: <input type="text" id="vm4" placeholder="Skriv på spanska..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>5. Hosta: <input type="text" id="vm5" placeholder="Skriv på spanska..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>6. Halsont / Ont i halsen: <input type="text" id="vm6" placeholder="dolor de..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>7. Ont i magen / Magknip: <input type="text" id="vm7" placeholder="dolor de..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>8. Medicin / Läkemedel: <input type="text" id="vm8" placeholder="Skriv på spanska..." class="w-full p-2 border rounded mt-1"></div>
+                </div>
+
+                <button onclick="checkVocabMedico('${task.id}', ${task.points})" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition mt-4">Rätta alla 8 ord</button>
+                <p id="vmRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function checkVocabMedico(taskId, points) {
+            const ok = norm(document.getElementById('vm1').value) === 'dolor de cabeza' &&
+                       norm(document.getElementById('vm2').value) === 'fiebre' &&
+                       norm(document.getElementById('vm3').value) === 'receta' &&
+                       norm(document.getElementById('vm4').value) === 'mareo' &&
+                       norm(document.getElementById('vm5').value) === 'tos' &&
+                       norm(document.getElementById('vm6').value) === 'dolor de garganta' &&
+                       (norm(document.getElementById('vm7').value) === 'dolor de estomago' || norm(document.getElementById('vm7').value) === 'dolor de barriga') &&
+                       norm(document.getElementById('vm8').value) === 'medicamento';
+
+            if (ok) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('vmRes');
+                res.innerText = "Något ord stämmer inte. Klicka på 'Hjälp' högst upp om du behöver se ordlistan!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderQuizVerbosDolor(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Grammatikregel for me duele/tengo/estoy:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <li><b>Me duele + singular:</b> Me duele la espalda / el oído.</li>
+                    <li><b>Me duelen + plural:</b> Me duelen los oídos / las piernas.</li>
+                    <li><b>Tengo + substantiv:</b> Tengo fiebre / tos / gripe / escalofríos.</li>
+                    <li><b>Estoy + tillstånd:</b> Estoy mareado/a / cansado/a / resfriado/a.</li>
+                </ul>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Fyll i rätt form av verben (duele, duelen, tengo, estoy):</p>
+                <div class="space-y-2.5 text-xs">
+                    <div>1. Me <input type="text" id="vd1" placeholder="duele / duelen..." class="p-1 border rounded w-32"> la espalda.</div>
+                    <div>2. Me <input type="text" id="vd2" placeholder="duele / duelen..." class="p-1 border rounded w-32"> los oídos.</div>
+                    <div>3. <input type="text" id="vd3" placeholder="tengo / estoy..." class="p-1 border rounded w-32"> 38 grados de fiebre.</div>
+                    <div>4. <input type="text" id="vd4" placeholder="tengo / estoy..." class="p-1 border rounded w-32"> muy mareado/a hoy.</div>
+                    <div>5. Me <input type="text" id="vd5" placeholder="duele / duelen..." class="p-1 border rounded w-32"> el estómago.</div>
+                    <div>6. Me <input type="text" id="vd6" placeholder="duele / duelen..." class="p-1 border rounded w-32"> las piernas.</div>
+                    <div>7. <input type="text" id="vd7" placeholder="tengo / estoy..." class="p-1 border rounded w-32"> tos fuerte y escalofríos.</div>
+                    <div>8. <input type="text" id="vd8" placeholder="tengo / estoy..." class="p-1 border rounded w-32"> muy cansado y resfriado.</div>
+
+                    <button onclick="checkVerbosDolor('${task.id}', ${task.points})" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition mt-3">Rätta verben</button>
+                    <p id="vdRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkVerbosDolor(taskId, points) {
+            const ok = norm(document.getElementById('vd1').value) === 'duele' &&
+                       norm(document.getElementById('vd2').value) === 'duelen' &&
+                       norm(document.getElementById('vd3').value) === 'tengo' &&
+                       norm(document.getElementById('vd4').value) === 'estoy' &&
+                       norm(document.getElementById('vd5').value) === 'duele' &&
+                       norm(document.getElementById('vd6').value) === 'duelen' &&
+                       norm(document.getElementById('vd7').value) === 'tengo' &&
+                       norm(document.getElementById('vd8').value) === 'estoy';
+
+            if (ok) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('vdRes');
+                res.innerText = "Kolla böjningarna! Kom ihåg: duele (singular), duelen (plural), tengo (symptom), estoy (tillstånd).";
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderQuizDuracionSintomas(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Regel för Desde vs Desde hace:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <li><b>Desde + tidpunkt / bestämd dag:</b> desde el lunes, desde ayer, desde esta mañana, desde 2023.</li>
+                    <li><b>Desde hace + tidslängd / tidsrymd:</b> desde hace tres días, desde hace una semana, desde hace dos horas.</li>
+                </ul>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Välj mellan <b>desde</b> och <b>desde hace</b> i alla 7 meningarna:</p>
+                <div class="space-y-2.5 text-xs">
+                    <div>1. Me duele el estómago <input type="text" id="ds1" placeholder="desde / desde hace" class="p-1 border rounded w-36"> tres días.</div>
+                    <div>2. Tengo tos <input type="text" id="ds2" placeholder="desde / desde hace" class="p-1 border rounded w-36"> el lunes pasado.</div>
+                    <div>3. ¿<input type="text" id="ds3" placeholder="Desde / Desde hace" class="p-1 border rounded w-36"> cuándo te sientes así?</div>
+                    <div>4. Estoy enfermo/a <input type="text" id="ds4" placeholder="desde / desde hace" class="p-1 border rounded w-36"> una semana.</div>
+                    <div>5. Tengo fiebre <input type="text" id="ds5" placeholder="desde / desde hace" class="p-1 border rounded w-36"> ayer por la tarde.</div>
+                    <div>6. Me duelen los ojos <input type="text" id="ds6" placeholder="desde / desde hace" class="p-1 border rounded w-36"> dos horas.</div>
+                    <div>7. No me encuentro bien <input type="text" id="ds7" placeholder="desde / desde hace" class="p-1 border rounded w-36"> esta mañana.</div>
+
+                    <button onclick="checkDuracionSintomas('${task.id}', ${task.points})" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition mt-3">Rätta tidsuttryck</button>
+                    <p id="dsRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkDuracionSintomas(taskId, points) {
+            const ok = norm(document.getElementById('ds1').value) === 'desde hace' &&
+                       norm(document.getElementById('ds2').value) === 'desde' &&
+                       norm(document.getElementById('ds3').value) === 'desde' &&
+                       norm(document.getElementById('ds4').value) === 'desde hace' &&
+                       norm(document.getElementById('ds5').value) === 'desde' &&
+                       norm(document.getElementById('ds6').value) === 'desde hace' &&
+                       norm(document.getElementById('ds7').value) === 'desde';
+
+            if (ok) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('dsRes');
+                res.innerText = "Kom ihåg: 'desde hace' + tidslängd (tres días, dos horas). 'desde' + specifik tidpunkt (ayer, esta mañana, el lunes).";
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderQuizConsejosMedico(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Ordlista med verb i infinitiv för råd:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <li><b>tomar</b> = ta / dricka (medicin/tabletter)</li>
+                    <li><b>guardar / hacer</b> = hålla / göra (reposo = vila)</li>
+                    <li><b>beber</b> = dricka (agua/líquidos)</li>
+                    <li><b>descansar</b> = vila</li>
+                    <li><b>evitar</b> = undvika (ejercicio/esfuerzo)</li>
+                    <li><b>pedir</b> = be om / boka (una cita)</li>
+                    <li><b>aplicar</b> = applicera / smörja in (una crema)</li>
+                </ul>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Fyll i rätt verb i infinitiv för läkarens instruktioner:</p>
+                <div class="space-y-2.5 text-xs">
+                    <div>1. Tiene que <input type="text" id="cm1" placeholder="tomar, descansar..." class="p-1 border rounded w-40"> este medicamento cada 8 horas.</div>
+                    <div>2. Es importante <input type="text" id="cm2" placeholder="guardar, hacer..." class="p-1 border rounded w-40"> mucho reposo en cama.</div>
+                    <div>3. Debe <input type="text" id="cm3" placeholder="beber, tomar..." class="p-1 border rounded w-40"> bastante agua durante el día.</div>
+                    <div>4. Recomiendo <input type="text" id="cm4" placeholder="descansar..." class="p-1 border rounded w-40"> un par de días sin trabajar.</div>
+                    <div>5. Hay que <input type="text" id="cm5" placeholder="evitar..." class="p-1 border rounded w-40"> el ejercicio físico intenso.</div>
+                    <div>6. Debe <input type="text" id="cm6" placeholder="pedir..." class="p-1 border rounded w-40"> una nueva cita la próxima semana.</div>
+                    <div>7. Tiene que <input type="text" id="cm7" placeholder="aplicar..." class="p-1 border rounded w-40"> esta crema dos veces al día.</div>
+
+                    <button onclick="checkConsejosMedico('${task.id}', ${task.points})" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition mt-3">Rätta råd</button>
+                    <p id="cmRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkConsejosMedico(taskId, points) {
+            const ok = norm(document.getElementById('cm1').value) === 'tomar' &&
+                       (norm(document.getElementById('cm2').value) === 'guardar' || norm(document.getElementById('cm2').value) === 'hacer') &&
+                       norm(document.getElementById('cm3').value) === 'beber' &&
+                       norm(document.getElementById('cm4').value) === 'descansar' &&
+                       norm(document.getElementById('cm5').value) === 'evitar' &&
+                       norm(document.getElementById('cm6').value) === 'pedir' &&
+                       norm(document.getElementById('cm7').value) === 'aplicar';
+
+            if (ok) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('cmRes');
+                res.innerText = "Något verb i infinitiv stämmer inte. Klicka på 'Hjälp' för att se verblistan!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // ==========================================
+        // 🟡 GULA RÄTTER (5 - 8)
+        // ==========================================
+
+        function renderReadProspecto(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Läshjälp:</p>
+                <p><b>Indicaciones</b> = Användningsområde | <b>Dosis</b> = Dosering | <b>Advertencia</b> = Varning. Svara på spanska eller svenska med nyckelorden från texten.</p>
+            `);
+
+            container.innerHTML = `
+                <div class="bg-indigo-50 border border-indigo-200 p-3 rounded-xl text-xs space-y-1 text-slate-800 mb-3">
+                    <p class="font-bold text-indigo-900">PROSPECTO: Paracetamol 500 mg</p>
+                    <p><b>Indicaciones:</b> Tratamiento del dolor moderado (cabeza, garganta) y estados febriles.</p>
+                    <p><b>Dosis recomendada:</b> Adultos: 1 comprimido cada 8 horas. No superar los 3 gramos diarios.</p>
+                    <p><b>Instrucciones:</b> Tomar con un vaso de agua, preferiblemente después de las comidas.</p>
+                    <p><b>Advertencia:</b> Si la fiebre persiste más de 3 días, consulte a su médico.</p>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div>1. ¿Para qué síntomas se recomienda este medicamento? <br><input type="text" id="rp1" placeholder="Skriv ditt svar..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>2. ¿Cada cuántas horas se debe tomar la dosis en adultos? <br><input type="text" id="rp2" placeholder="Skriv ditt svar..." class="w-full p-2 border rounded mt-1"></div>
+                    <div>3. ¿Qué se debe hacer si la fiebre dura más de tres días? <br><input type="text" id="rp3" placeholder="Skriv ditt svar..." class="w-full p-2 border rounded mt-1"></div>
+
+                    <button onclick="checkReadProspecto('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition mt-2">Rätta läsförståelse</button>
+                    <p id="rpRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkReadProspecto(taskId, points) {
+            const r1 = norm(document.getElementById('rp1').value);
+            const r2 = norm(document.getElementById('rp2').value);
+            const r3 = norm(document.getElementById('rp3').value);
+
+            const ok = (r1.includes('dolor') || r1.includes('cabeza') || r1.includes('fiebre')) &&
+                       (r2.includes('8') || r2.includes('ocho')) &&
+                       (r3.includes('medico') || r3.includes('consultar'));
+
+            if (ok) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('rpRes');
+                res.innerText = "Läs texten noga: dolor/fiebre, 8 horas, consultar al médico.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderWriteEmailCita(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Struktur för mejlet:</p>
+                <p>1. <b>Hälsning:</b> Estimado/a doctor/a, Hola...</p>
+                <p>2. <b>Symptom & tid:</b> Tengo dolor de... desde hace... / Me duele...</p>
+                <p>3. <b>Önskemål:</b> Quisiera pedir una cita con el médico.</p>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Skriv ett meddelande till vårdcentralen (Centro de Salud) där du ber om en läkartid och beskriver dina symptom (<b>minst 40 ord</b>):</p>
+                
+                <textarea id="emailCita" rows="5" oninput="countWords('emailCita', 'emailCounter')" placeholder="Escribe en español..." class="w-full p-3 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-300"></textarea>
+
+                <div class="flex justify-between items-center text-xs mt-1 mb-3">
+                    <span id="emailCounter" class="font-bold text-slate-500">0 / 40 ord</span>
+                    <span class="text-slate-400">Inkludera: Saludo, síntomas, desde cuándo, petición de cita.</span>
+                </div>
+
+                <button onclick="checkWriteEmailCita('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition">Spara meddelande</button>
+                <p id="emailRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function checkWriteEmailCita(taskId, points) {
+            const txt = document.getElementById('emailCita').value.trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+
+            if (words >= 40) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('emailRes');
+                res.innerText = `Ditt meddelande har hittills ${words} ord. Skriv minst 40 ord.`;
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderErrorDetectiveMedico(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Tips för feldetektiven:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <li>Kolla om det ska vara <b>duele</b> (singular) eller <b>duelen</b> (plural).</li>
+                    <li>Använd <b>estoy</b> för tillstånd (estoy mareado/a), inte tengo.</li>
+                    <li>Använd <b>desde</b> + specifik dag (desde el lunes), inte "desde hace el lunes".</li>
+                    <li>Det heter <b>dolor</b> de cabeza (substantiv), inte "doler de cabeza".</li>
+                    <li>Substantiv har kön: <b>el</b> estómago (inte "la estómago").</li>
+                </ul>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Hitta och korrigera felaktiga medicinska meningar (alla 5):</p>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">1. Fel: "Me duele los ojos desde ayer."</p>
+                        <input type="text" id="em1" placeholder="Skriv korrekt mening..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">2. Fel: "Tengo muy mareado hoy."</p>
+                        <input type="text" id="em2" placeholder="Skriv korrekt mening..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">3. Fel: "Me duele la garganta desde hace el lunes."</p>
+                        <input type="text" id="em3" placeholder="Skriv korrekt mening..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">4. Fel: "Tengo doler de cabeza bastante fuerte."</p>
+                        <input type="text" id="em4" placeholder="Skriv korrekt mening..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-700 mb-1">5. Fel: "Me duele la estómago desde esta mañana."</p>
+                        <input type="text" id="em5" placeholder="Skriv korrekt mening..." class="w-full p-2 border rounded">
+                    </div>
+
+                    <button onclick="checkErrorDetectiveMedico('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition mt-2">Rätta meningarna</button>
+                    <p id="emRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkErrorDetectiveMedico(taskId, points) {
+            const e1 = norm(document.getElementById('em1').value);
+            const e2 = norm(document.getElementById('em2').value);
+            const e3 = norm(document.getElementById('em3').value);
+            const e4 = norm(document.getElementById('em4').value);
+            const e5 = norm(document.getElementById('em5').value);
+
+            const ok1 = e1.includes('duelen los ojos');
+            const ok2 = e2.includes('estoy') && e2.includes('mareado');
+            const ok3 = e3.includes('desde el lunes') && !e3.includes('hace');
+            const ok4 = e4.includes('dolor de cabeza');
+            const ok5 = e5.includes('el estomago');
+
+            if (ok1 && ok2 && ok3 && ok4 && ok5) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('emRes');
+                res.innerText = "Kolla: 1. duelen..., 2. estoy mareado..., 3. desde el lunes, 4. dolor de cabeza, 5. el estómago. Klicka på 'Hjälp' för fler ledtrådar!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderDialogoMedicoFill(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Användbara fraser i dialogen:</p>
+                <p>• ¿Qué le pasa? | me duele mucho... | ¿Desde cuándo...? | le voy a recetar...</p>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Fyll i de saknade fraserna i läkardialogen (¿Qué le pasa?, me duele, desde, recetar):</p>
+                <div class="space-y-3 text-xs bg-slate-50 p-3 rounded-xl border">
+                    <p><b>Doctora:</b> Buenos días. Siéntese, por favor. <input type="text" id="df1" placeholder="Fråga vad som står på..." class="p-1 border rounded w-48">?</p>
+                    <p><b>Paciente:</b> Buenos días, doctora. Es que <input type="text" id="df2" placeholder="beskriv att det gör ont..." class="p-1 border rounded w-40"> mucho la espalda.</p>
+                    <p><b>Doctora:</b> Comprendo. ¿Y <input type="text" id="df3" placeholder="hur länge? (desde...)" class="p-1 border rounded w-36"> cuánto tiempo tiene este dolor?</p>
+                    <p><b>Paciente:</b> Tengo este dolor desde hace cuatro días.</p>
+                    <p><b>Doctora:</b> Le voy a <input type="text" id="df4" placeholder="skriva ut (verb)..." class="p-1 border rounded w-36"> un antiinflamatorio.</p>
+
+                    <button onclick="checkDialogoMedicoFill('${task.id}', ${task.points})" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition mt-2">Rätta dialogen</button>
+                    <p id="dfRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkDialogoMedicoFill(taskId, points) {
+            const f1 = norm(document.getElementById('df1').value);
+            const f2 = norm(document.getElementById('df2').value);
+            const f3 = norm(document.getElementById('df3').value);
+            const f4 = norm(document.getElementById('df4').value);
+
+            const ok = (f1.includes('que le pasa') || f1.includes('que siente')) &&
+                       f2.includes('me duele') &&
+                       f3.includes('desde') &&
+                       f4.includes('recetar');
+
+            if (ok) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('dfRes');
+                res.innerText = "Kolla fraserna: ¿Qué le pasa?, me duele, desde, recetar.";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // ==========================================
+        // 🔴 RÖDA RÄTTER (9 - 12)
+        // ==========================================
+
+        let chatMedicoStep = 0;
+        function renderChatSimMedico(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Hjälp för chatten:</p>
+                <p>Svara naturligt på doktorn. T.ex: "Me duele la cabeza y tengo fiebre", "Desde hace dos días", "No tengo tos".</p>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Simulerat läkarbesök i realtid med Dr. García:</p>
+                
+                <div id="chatMedicoBox" class="bg-slate-50 border rounded-xl p-3 h-64 overflow-y-auto space-y-3 text-xs mb-3 flex flex-col">
+                    <div class="bg-emerald-100 text-emerald-900 p-2.5 rounded-xl max-w-[80%] self-start">
+                        <b>Dr. García:</b> Hola, buenos días. Pase y tome asiento. ¿Qué le ocurre o qué síntomas tiene hoy?
+                    </div>
+                </div>
+
+                <div class="flex gap-2 text-xs">
+                    <input type="text" id="chatMedicoInput" placeholder="Svara på spanska..." class="flex-1 p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-rose-300">
+                    <button onclick="sendChatMedicoMessage('${task.id}', ${task.points})" class="px-4 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">Sänd</button>
+                </div>
+            `;
+            chatMedicoStep = 0;
+        }
+
+        function sendChatMedicoMessage(taskId, points) {
+            const input = document.getElementById('chatMedicoInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const box = document.getElementById('chatMedicoBox');
+            
+            const userBubble = document.createElement('div');
+            userBubble.className = "bg-rose-600 text-white p-2.5 rounded-xl max-w-[80%] self-end";
+            userBubble.innerHTML = `<b>Tú:</b> ${msg}`;
+            box.appendChild(userBubble);
+
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            chatMedicoStep++;
+
+            setTimeout(() => {
+                const botBubble = document.createElement('div');
+                botBubble.className = "bg-emerald-100 text-emerald-900 p-2.5 rounded-xl max-w-[80%] self-start";
+
+                if (chatMedicoStep === 1) {
+                    botBubble.innerHTML = `<b>Dr. García:</b> Entiendo. ¿Desde cuándo se siente así o desde hace cuántos días tiene estas molestias?`;
+                } else if (chatMedicoStep === 2) {
+                    botBubble.innerHTML = `<b>Dr. García:</b> De acuerdo. ¿Tiene también fiebre, tos o algún otro síntoma?`;
+                } else if (chatMedicoStep === 3) {
+                    botBubble.innerHTML = `<b>Dr. García:</b> Le voy a recetar un tratamiento y necesita descansar. ¿Tiene alguna pregunta sobre la medicina?`;
+                } else if (chatMedicoStep >= 4) {
+                    botBubble.innerHTML = `<b>Dr. García:</b> Perfecto. Le firmo la receta. ¡Que se mejore pronto y cuídese mucho! 👋`;
+                    box.appendChild(botBubble);
+                    box.scrollTop = box.scrollHeight;
+
+                    setTimeout(() => {
+                        alert("¡Consulta médica completada con éxito!");
+                        completeTask(taskId, points);
+                    }, 1000);
+                    return;
+                }
+
+                box.appendChild(botBubble);
+                box.scrollTop = box.scrollHeight;
+            }, 800);
+        }
+
+        function renderPrepGuionConsulta(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Stödlinjer för manus:</p>
+                <p>• Hola doctor/a | Me siento mal | Me duele... / Tengo... | Desde hace X días | ¿Cómo debo tomar la medicina?</p>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Skriv ditt manus/stödord inför det muntliga läkarrollspelet i par (<b>minst 60 ord</b>):</p>
+                
+                <textarea id="guionMedico" rows="6" oninput="countWords('guionMedico', 'guionCounter')" placeholder="Escribe tus frases y respuestas en español..." class="w-full p-3 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-rose-300"></textarea>
+
+                <div class="flex justify-between items-center text-xs mt-1 mb-3">
+                    <span id="guionCounter" class="font-bold text-slate-500">0 / 60 ord</span>
+                    <span class="text-slate-400">Inkludera: hälsning, symptom, varaktighet, ställa frågor om medicin.</span>
+                </div>
+
+                <button onclick="checkPrepGuionConsulta('${task.id}', ${task.points})" class="w-full py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">Spara manus</button>
+                <p id="guionRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function checkPrepGuionConsulta(taskId, points) {
+            const txt = document.getElementById('guionMedico').value.trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+
+            if (words >= 60) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('guionRes');
+                res.innerText = `Ditt manus har ${words} ord. Skriv minst 60 ord på spanska.`;
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderEvalRollspelParejas(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Hjälp för logg:</p>
+                <p>Ange partnerns namn och utvärdera kort på spanska (t.ex. "Hemos practicado el diálogo del médico. Mi compañero ha usado bien la palabra receta y me duele.").</p>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Logga genomförandet av rollspelet i par (där ni turas om att vara läkare och patient):</p>
+                
+                <div class="space-y-3 text-xs bg-slate-50 p-3 rounded-xl border">
+                    <div>
+                        <label class="font-bold text-slate-700">Namn på din partner:</label>
+                        <input type="text" id="partnerNameMed" placeholder="Skriv partnerns namn..." class="w-full p-2 border rounded mt-1">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700">Kort utvärdering på spanska av er dialog och hur väl ni använde vokabulären:</label>
+                        <textarea id="evalNotesMed" rows="3" placeholder="Escribe en español sobre el juego de rol..." class="w-full p-2 border rounded mt-1"></textarea>
+                    </div>
+
+                    <button onclick="checkEvalRollspelParejas('${task.id}', ${task.points})" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition mt-2">Registrera genomfört rollspel</button>
+                    <p id="evalMedRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkEvalRollspelParejas(taskId, points) {
+            const pName = document.getElementById('partnerNameMed').value.trim();
+            const notes = document.getElementById('evalNotesMed').value.trim();
+
+            if (pName && notes.length >= 15) completeTask(taskId, points);
+            else {
+                const res = document.getElementById('evalMedRes');
+                res.innerText = "Fyll i partnerns namn och skriv en kort kommentar (minst 15 tecken).";
+                res.classList.remove('hidden');
+            }
+        }
+
+        function renderFinalOralMedico(container, task) {
+            setHelpText(`
+                <p class="font-bold text-amber-900 mb-1">💡 Bedömningskriterier:</p>
+                <p>Användning av me duele/duelen, tengo, estoy, desde/desde hace och förståelse av läkarens instruktioner.</p>
+            `);
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Avslutande muntlig examination (Consulta Médica Oral):</p>
+                
+                <div class="bg-slate-50 border rounded-xl p-4 text-center space-y-3">
+                    <i class="fa-solid fa-stethoscope text-4xl text-rose-600"></i>
+                    <p class="text-xs text-slate-600">
+                        Genomför samtalet (3–5 minuter) inför eller tillsammans med din lärare. Beskriv ett sjukdomsfall, förklara symptom och förstå läkarinstruktioner.
+                    </p>
+                    
+                    <div class="pt-2">
+                        <button onclick="completeTask('${task.id}', ${task.points})" class="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition text-xs">
+                            <i class="fa-solid fa-check"></i> Jag har genomfört den muntliga examinationen
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
