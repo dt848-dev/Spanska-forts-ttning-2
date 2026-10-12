@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preparaciones para el examen - Glosor A2/B1</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .task-card { transition: all 0.2s ease-in-out; }
+        .task-card:not(.locked):hover { transform: translateY(-3px); }
+        
+        .flip-card { perspective: 1000px; }
+        .flip-card-inner { transition: transform 0.4s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { backface-visibility: hidden; }
+        .flip-card-back { transform: rotateY(180deg); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-warning {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800 pb-12">
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-medium text-sm border border-rose-400">
+        <i class="fa-solid fa-ban text-lg"></i>
+        <span id="toastMessage">Inklistring är avstängd! Skriv glosorna själv för bästa träning.</span>
+    </div>
+
+    <!-- TOP BAR / HEADER -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-brain text-amber-400"></i> Preparaciones para el examen
+                </h1>
+                <p class="text-indigo-200 text-sm">Intensivträning på 50 fördjupningsglosor (A2/B1)</p>
+            </div>
+            <!-- Elevprofil -->
+            <div class="flex items-center gap-3">
+                <input type="text" id="studentName" placeholder="Ditt namn..." class="px-3 py-1.5 rounded-lg text-slate-800 text-sm font-medium border-none focus:ring-2 focus:ring-indigo-400 outline-none shadow-inner" oninput="saveName()">
+                <button onclick="resetProgress()" class="text-xs bg-indigo-950 hover:bg-black text-indigo-200 px-2.5 py-1.5 rounded transition" title="Nollställ alla poäng">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+
+        <!-- PROGRESS & POÄNGBAR -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Din Progress</span>
+                    <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <span id="scoreText">0</span> / 260 <span class="text-sm font-normal text-slate-500">poäng</span>
+                    </h2>
+                </div>
+                <div id="badgeContainer" class="text-right">
+                    <span id="statusBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-hourglass-start"></i> Börja med de gröna rätterna!
+                    </span>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner border border-slate-200">
+                <div id="progressBar" class="bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 h-full w-0 transition-all duration-500 rounded-full"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">🔒 <i>Gula rätter låses upp när alla Gröna är klara. Röda rätter låses upp när alla Gula är klara.</i></p>
+        </section>
+
+        <!-- DASHBOARD UPPGIFTER -->
+        <div class="space-y-6">
+
+            <!-- 🟢 GRÖNA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Gröna Rätter <span class="text-xs text-slate-500 font-normal">(Inlärning & Grundglosor • Upplåsta från start)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="greenTasks"></div>
+            </div>
+
+            <!-- 🟡 GULA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-amber-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Gula Rätter <span class="text-xs text-slate-500 font-normal">(Flerval, lucktext & meningar • Kräv alla Gröna)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="yellowTasks"></div>
+            </div>
+
+            <!-- 🔴 RÖDA RÄTTER -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500 inline-block"></span>
+                    <h3 class="font-bold text-lg text-slate-800">Röda Rätter <span class="text-xs text-slate-500 font-normal">(Snabbspel, text & översättning • Kräv alla Gula)</span></h3>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4" id="redTasks"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- INTERAKTIV MODAL -->
+    <div id="exerciseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 rounded-t-2xl">
+                <div>
+                    <span id="modalCategory" class="text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800 mt-1"></h2>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div id="modalBody" class="p-6 flex-1 space-y-4"></div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 rounded-b-2xl">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition">Stäng</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 50 SLIGHTLY MORE ADVANCED A2/B1 SPANISH WORDS
+        const vocabList = [
+            // VERBOS (15)
+            { es: "comprender", sv: "förstå", type: "verb" },
+            { es: "aprender", sv: "lära sig", type: "verb" },
+            { es: "escribir", sv: "skriva", type: "verb" },
+            { es: "escuchar", sv: "lyssna", type: "verb" },
+            { es: "recordar", sv: "komma ihåg / minnas", type: "verb" },
+            { es: "empezar", sv: "börja", type: "verb" },
+            { es: "terminar", sv: "sluta / avsluta", type: "verb" },
+            { es: "buscar", sv: "söka / leta efter", type: "verb" },
+            { es: "cambiar", sv: "ändra / byta", type: "verb" },
+            { es: "esperar", sv: "vänta / hoppas", type: "verb" },
+            { es: "pensar", sv: "tänka / tycka", type: "verb" },
+            { es: "llegar", sv: "anlända / komma fram", type: "verb" },
+            { es: "salir", sv: "gå ut / åka iväg", type: "verb" },
+            { es: "decidir", sv: "bestämma", type: "verb" },
+            { es: "intentar", sv: "försöka", type: "verb" },
+
+            // SUSTANTIVOS (15)
+            { es: "el viaje", sv: "resan", type: "sustantivo" },
+            { es: "la pregunta", sv: "frågan", type: "sustantivo" },
+            { es: "la respuesta", sv: "svaret", type: "sustantivo" },
+            { es: "la solución", sv: "lösningen", type: "sustantivo" },
+            { es: "la verdad", sv: "sanningen", type: "sustantivo" },
+            { es: "la decisión", sv: "beslutet", type: "sustantivo" },
+            { es: "el problema", sv: "problemet", type: "sustantivo" },
+            { es: "la experiencia", sv: "erfarenheten", type: "sustantivo" },
+            { es: "el lugar", sv: "platsen / stället", type: "sustantivo" },
+            { es: "la salud", sv: "hälsan", type: "sustantivo" },
+            { es: "la historia", sv: "historien / berättelsen", type: "sustantivo" },
+            { es: "el equipo", sv: "laget / utrustningen", type: "sustantivo" },
+            { es: "la ventaja", sv: "fördelen", type: "sustantivo" },
+            { es: "el peligro", sv: "faran", type: "sustantivo" },
+            { es: "el futuro", sv: "framtiden", type: "sustantivo" },
+
+            // ADJETIVOS (10)
+            { es: "importante", sv: "viktig", type: "adjetivo" },
+            { es: "necesario", sv: "nödvändig", type: "adjetivo" },
+            { es: "posible", sv: "möjlig", type: "adjetivo" },
+            { es: "imposible", sv: "omöjlig", type: "adjetivo" },
+            { es: "peligroso", sv: "farlig", type: "adjetivo" },
+            { es: "tranquilo", sv: "lugn / stilla", type: "adjetivo" },
+            { es: "diferente", sv: "annorlunda / olika", type: "adjetivo" },
+            { es: "útil", sv: "användbar / nyttig", type: "adjetivo" },
+            { es: "rápido", sv: "snabb", type: "adjetivo" },
+            { es: "seguro", sv: "säker / trygg", type: "adjetivo" },
+
+            // EXPRESIONES DE TIEMPO Y CONECTORES (10)
+            { es: "mientras", sv: "medan", type: "tiempo" },
+            { es: "durante", sv: "under / under tiden", type: "tiempo" },
+            { es: "pronto", sv: "snart", type: "tiempo" },
+            { es: "luego", sv: "sedan / senare", type: "tiempo" },
+            { es: "finalmente", sv: "slutligen / till sist", type: "tiempo" },
+            { es: "a menudo", sv: "ofta", type: "tiempo" },
+            { es: "de vez en cuando", sv: "då och då", type: "tiempo" },
+            { es: "anteayer", sv: "i förrgår", type: "tiempo" },
+            { es: "enseguida", sv: "genast / direkt", type: "tiempo" },
+            { es: "todavía", sv: "fortfarande", type: "tiempo" }
+        ];
+
+        const tasks = [
+            // Gröna rätter
+            { id: 'task1', color: 'green', points: 20, title: '1. Flashcards Interactivas', desc: 'Träna på alla 50 A2-glosor uppdelade i kategorier.', type: 'flashcards' },
+            { id: 'task2', color: 'green', points: 20, title: '2. Sortera ordklasser (16 ord)', desc: 'Sortera 16 ord i Verbo, Sustantivo, Adjetivo eller Tiempo.', type: 'word_sorter' },
+            { id: 'task3', color: 'green', points: 20, title: '3. Memory (8 par)', desc: 'Matcha 8 ordpar mellan spanska och svenska.', type: 'memory_game' },
+            { id: 'task4', color: 'green', points: 20, title: '4. Snabbkoll (10 ord)', desc: 'Skriv den svenska översättningen för 10 glosor.', type: 'quick_quiz' },
+
+            // Gula rätter
+            { id: 'task5', color: 'yellow', points: 25, title: '5. Lucktext i meningar (8 ord)', desc: 'Placera rätt glosa i 8 sammanhängande meningar.', type: 'context_gapfill' },
+            { id: 'task6', color: 'yellow', points: 25, title: '6. Motsatser & Ordpar (6 par)', desc: 'Skriv motsatsen eller svarsparet på spanska.', type: 'synonyms_antonyms' },
+            { id: 'task7', color: 'yellow', points: 25, title: '7. Flervalslucktext (8 frågor)', desc: 'Välj rätt spansk glosa bland fyra alternativ.', type: 'multiple_choice_gapfill' },
+            { id: 'task8', color: 'yellow', points: 25, title: '8. Skriv 5 korta meningar', desc: 'Skriv 5 egna korta meningar med tilldelade ord.', type: 'write_sentences' },
+
+            // Röda rätter
+            { id: 'task9', color: 'red', points: 30, title: '9. Snabbduellen (10 ord på tid)', desc: 'Klara 10 glosor på tid (60s) med hjälpknapp.', type: 'speed_challenge' },
+            { id: 'task10', color: 'red', points: 35, title: '10. Min korta text (60 ord)', desc: 'Skriv en kort text med minst 6 av målglosorna.', type: 'write_full_text' },
+            { id: 'task11', color: 'red', points: 15, title: '11. Översättningsutmaningen', desc: 'Översätt 5 korta svenska meningar till spanska.', type: 'translation_challenge' }
+        ];
+
+        let state = { points: 0, completed: {}, studentName: '' };
+
+        window.onload = () => { loadState(); renderTasks(); updateUI(); setupGlobalPasteBlocker(); };
+
+        function loadState() {
+            const saved = localStorage.getItem('es_vocab_support_state_a2_locked');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('studentName').value = state.studentName || '';
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('es_vocab_support_state_a2_locked', JSON.stringify(state));
+        }
+
+        function saveName() {
+            state.studentName = document.getElementById('studentName').value;
+            saveState();
+        }
+
+        function resetProgress() {
+            if (confirm("Vill du nollställ alla dina poäng och låsa om uppgifterna?")) {
+                state.points = 0;
+                state.completed = {};
+                saveState();
+                renderTasks();
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('scoreText').innerText = state.points;
+            const percentage = Math.min(100, (state.points / 260) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+
+            const badge = document.getElementById('statusBadge');
+            if (state.points >= 230) {
+                badge.className = "bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-trophy text-amber-500"></i> ¡Campeón de Vocabulario!`;
+            } else if (state.points >= 110) {
+                badge.className = "bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-fire text-indigo-600"></i> Grymt jobbat med glosorna!`;
+            } else {
+                badge.className = "bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                badge.innerHTML = `<i class="fa-solid fa-lock text-amber-600"></i> Börja med de gröna rätterna!`;
+            }
+        }
+
+        // LÅSNINGSLOGIK: Gröna -> Gula -> Röda
+        function areGreenCompleted() {
+            return !!(state.completed['task1'] && state.completed['task2'] && state.completed['task3'] && state.completed['task4']);
+        }
+
+        function areYellowCompleted() {
+            return !!(state.completed['task5'] && state.completed['task6'] && state.completed['task7'] && state.completed['task8']);
+        }
+
+        function isTaskUnlocked(index) {
+            const task = tasks[index];
+            if (task.color === 'green') return true;
+            if (task.color === 'yellow') return areGreenCompleted();
+            if (task.color === 'red') return areGreenCompleted() && areYellowCompleted();
+            return false;
+        }
+
+        function renderTasks() {
+            const greenContainer = document.getElementById('greenTasks');
+            const yellowContainer = document.getElementById('yellowTasks');
+            const redContainer = document.getElementById('redTasks');
+
+            greenContainer.innerHTML = ''; yellowContainer.innerHTML = ''; redContainer.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const isDone = !!state.completed[task.id];
+                const unlocked = isTaskUnlocked(index);
+
+                const card = document.createElement('div');
+                let badgeColor = task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
+
+                if (!unlocked) {
+                    const lockMessage = task.color === 'yellow' ? '🔒 Klaras genom att göra alla Gröna' : '🔒 Klaras genom att göra alla Gula';
+                    card.className = "task-card locked bg-slate-50 p-4 rounded-xl border border-slate-200 opacity-60 flex flex-col justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                <span class="text-slate-400 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-lock"></i> Låst</span>
+                            </div>
+                            <h4 class="font-bold text-slate-700 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-400 mb-3">${task.desc}</p>
+                        </div>
+                        <button disabled class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg bg-slate-200 text-slate-400 cursor-not-allowed">
+                            ${lockMessage}
+                        </button>
+                    `;
+                } else {
+                    card.className = `task-card bg-white p-4 rounded-xl border ${isDone ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'} shadow-sm flex flex-col justify-between`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="${badgeColor} text-xs font-bold px-2 py-0.5 rounded-md">+${task.points} p</span>
+                                ${isDone ? '<span class="text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Klar</span>' : ''}
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">${task.title}</h4>
+                            <p class="text-xs text-slate-500 mb-3">${task.desc}</p>
+                        </div>
+                        <button onclick="openTask('${task.id}')" class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg transition ${isDone ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'}">
+                            ${isDone ? 'Gör om' : 'Starta'}
+                        </button>
+                    `;
+                }
+
+                if (task.color === 'green') greenContainer.appendChild(card);
+                if (task.color === 'yellow') yellowContainer.appendChild(card);
+                if (task.color === 'red') redContainer.appendChild(card);
+            });
+        }
+
+        function openTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('modalTitle').innerText = task.title;
+            const catBadge = document.getElementById('modalCategory');
+            catBadge.innerText = `+${task.points} Poäng`;
+            catBadge.className = `text-xs font-bold px-2.5 py-0.5 rounded-full ${task.color === 'green' ? 'bg-emerald-100 text-emerald-800' : task.color === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            switch(task.type) {
+                case 'flashcards': renderFlashcards(modalBody, task); break;
+                case 'word_sorter': renderWordSorter(modalBody, task); break;
+                case 'memory_game': renderMemoryGame(modalBody, task); break;
+                case 'quick_quiz': renderQuickQuiz(modalBody, task); break;
+                case 'context_gapfill': renderContextGapfill(modalBody, task); break;
+                case 'synonyms_antonyms': renderSynonymsAntonyms(modalBody, task); break;
+                case 'multiple_choice_gapfill': renderMultipleChoiceGapfill(modalBody, task); break;
+                case 'write_sentences': renderWriteSentences(modalBody, task); break;
+                case 'speed_challenge': renderSpeedChallenge(modalBody, task); break;
+                case 'write_full_text': renderWriteFullText(modalBody, task); break;
+                case 'translation_challenge': renderTranslationChallenge(modalBody, task); break;
+            }
+
+            document.getElementById('exerciseModal').classList.remove('hidden');
+        }
+
+        function closeModal() { 
+            document.getElementById('exerciseModal').classList.add('hidden'); 
+        }
+
+        function completeTask(taskId, points) {
+            const isFirstTime = !state.completed[taskId];
+            if (isFirstTime) {
+                state.points += points;
+                state.completed[taskId] = true;
+                saveState();
+                updateUI();
+                renderTasks();
+                confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+            }
+            closeModal();
+        }
+
+        function setupGlobalPasteBlocker() {
+            document.addEventListener('paste', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    e.preventDefault();
+                    e.target.classList.add('shake-warning');
+                    setTimeout(() => e.target.classList.remove('shake-warning'), 500);
+                    showToast("⛔ Ingen kopiering! Skriv glosorna själv för bästa träning.");
+                }
+            }, true);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function norm(s) { 
+            return s.trim().toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, ' '); 
+        }
+
+        function toggleHint(hintId) {
+            const elem = document.getElementById(hintId);
+            if (elem) elem.classList.toggle('hidden');
+        }
+
+        // 🟢 GRÖN 1: Flashcards Interactivas
+        let currentFlashcardIndex = 0;
+        let currentFlashcardFilter = 'todos';
+
+        function renderFlashcards(container, task) {
+            currentFlashcardIndex = 0;
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Klicka på kortet för att vända och se den svenska översättningen!</p>
+
+                <!-- Filter-knappar -->
+                <div class="flex flex-wrap gap-1.5 mb-4 text-xs font-semibold">
+                    <button onclick="filterCards('todos')" id="filter-todos" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white">Alla (50)</button>
+                    <button onclick="filterCards('verb')" id="filter-verb" class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700">Verbos (15)</button>
+                    <button onclick="filterCards('sustantivo')" id="filter-sustantivo" class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700">Sustantivos (15)</button>
+                    <button onclick="filterCards('adjetivo')" id="filter-adjetivo" class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700">Adjetivos (10)</button>
+                    <button onclick="filterCards('tiempo')" id="filter-tiempo" class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700">Tiempo (10)</button>
+                </div>
+
+                <!-- Flashcard Container -->
+                <div class="flex flex-col items-center">
+                    <div id="flashcardElement" onclick="this.classList.toggle('flipped')" class="flip-card w-full h-48 cursor-pointer">
+                        <div class="flip-card-inner relative w-full h-full shadow-lg rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center text-center p-6">
+                            <!-- Framside (Spanska) -->
+                            <div class="flip-card-front absolute inset-0 flex flex-col items-center justify-center p-4">
+                                <span id="cardType" class="text-[10px] uppercase font-extrabold tracking-wider bg-indigo-200 text-indigo-800 px-2.5 py-0.5 rounded-full mb-2"></span>
+                                <h3 id="cardSpanish" class="text-3xl font-black text-indigo-900"></h3>
+                                <p class="text-xs text-indigo-400 mt-2"><i class="fa-solid fa-rotate"></i> Klicka för att se svenska</p>
+                            </div>
+                            <!-- Baksida (Svenska) -->
+                            <div class="flip-card-back absolute inset-0 bg-indigo-900 text-white rounded-2xl flex flex-col items-center justify-center p-4">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-indigo-300 mb-1">Svensk översättning</span>
+                                <h3 id="cardSwedish" class="text-2xl font-bold text-amber-300"></h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigering -->
+                    <div class="flex items-center justify-between w-full mt-4 text-xs font-bold">
+                        <button onclick="prevCard()" class="px-3 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300"><i class="fa-solid fa-arrow-left"></i> Föregående</button>
+                        <span id="cardCounter" class="text-slate-500">1 / 50</span>
+                        <button onclick="nextCard()" class="px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Nästa <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+
+                    <div class="w-full flex gap-2 mt-4">
+                        <button onclick="toggleHint('hintFlash')" class="px-3 py-2 bg-amber-100 text-amber-800 font-bold rounded-xl text-xs hover:bg-amber-200 transition">💡 Ordlista</button>
+                        <button onclick="completeTask('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition text-xs">
+                            <i class="fa-solid fa-check-circle"></i> Jag har gått igenom korten!
+                        </button>
+                    </div>
+
+                    <p id="hintFlash" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden mt-2 w-full leading-relaxed">
+                        <b>Alla 50 A2-ord:</b><br>
+                        <i>Verbos:</i> comprender, aprender, escribir, escuchar, recordar, empezar, terminar, buscar, cambiar, esperar, pensar, llegar, salir, decidir, intentar.<br>
+                        <i>Sustantivos:</i> el viaje, la pregunta, la respuesta, la solución, la verdad, la decisión, el problema, la experiencia, el lugar, la salud, la historia, el equipo, la ventaja, el peligro, el futuro.<br>
+                        <i>Adjetivos:</i> importante, necesario, posible, imposible, peligroso, tranquilo, diferente, útil, rápido, seguro.<br>
+                        <i>Tiempo:</i> mientras, durante, pronto, luego, finalmente, a menudo, de vez en cuando, anteayer, enseguida, todavía.
+                    </p>
+                </div>
+            `;
+            updateFlashcard();
+        }
+
+        function getFilteredCards() {
+            if (currentFlashcardFilter === 'todos') return vocabList;
+            return vocabList.filter(v => v.type === currentFlashcardFilter);
+        }
+
+        function filterCards(type) {
+            currentFlashcardFilter = type;
+            currentFlashcardIndex = 0;
+            
+            ['todos', 'verb', 'sustantivo', 'adjetivo', 'tiempo'].forEach(t => {
+                const btn = document.getElementById(`filter-${t}`);
+                if (btn) {
+                    if (t === type) {
+                        btn.className = "px-2.5 py-1 rounded-lg bg-indigo-600 text-white";
+                    } else {
+                        btn.className = "px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700";
+                    }
+                }
+            });
+            updateFlashcard();
+        }
+
+        function updateFlashcard() {
+            const cards = getFilteredCards();
+            if (cards.length === 0) return;
+
+            const card = cards[currentFlashcardIndex];
+            const elem = document.getElementById('flashcardElement');
+            if (elem) elem.classList.remove('flipped');
+
+            document.getElementById('cardSpanish').innerText = card.es;
+            document.getElementById('cardSwedish').innerText = card.sv;
+            document.getElementById('cardType').innerText = card.type === 'tiempo' ? 'Expresión / Conector' : card.type;
+            document.getElementById('cardCounter').innerText = `${currentFlashcardIndex + 1} / ${cards.length}`;
+        }
+
+        function nextCard() {
+            const cards = getFilteredCards();
+            currentFlashcardIndex = (currentFlashcardIndex + 1) % cards.length;
+            updateFlashcard();
+        }
+
+        function prevCard() {
+            const cards = getFilteredCards();
+            currentFlashcardIndex = (currentFlashcardIndex - 1 + cards.length) % cards.length;
+            updateFlashcard();
+        }
+
+        // 🟢 GRÖN 2: Clasificador de Ordklasser (16 ORD)
+        function renderWordSorter(container, task) {
+            const sampleWords = [
+                { es: "comprender", cat: "verb" },
+                { es: "el viaje", cat: "sustantivo" },
+                { es: "importante", cat: "adjetivo" },
+                { es: "pronto", cat: "tiempo" },
+                { es: "aprender", cat: "verb" },
+                { es: "la pregunta", cat: "sustantivo" },
+                { es: "tranquilo", cat: "adjetivo" },
+                { es: "mientras", cat: "tiempo" },
+                { es: "esperar", cat: "verb" },
+                { es: "el problema", cat: "sustantivo" },
+                { es: "diferente", cat: "adjetivo" },
+                { es: "finalmente", cat: "tiempo" },
+                { es: "decidir", cat: "verb" },
+                { es: "la respuesta", cat: "sustantivo" },
+                { es: "peligroso", cat: "adjetivo" },
+                { es: "todavía", cat: "tiempo" }
+            ];
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Välj rätt kategori för alla 16 ord nedan:</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    ${sampleWords.map((item, idx) => `
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-200">
+                            <span class="font-bold text-indigo-900 text-xs">${idx + 1}.${item.es}</span>
+                            <select id="sortCat_${idx}" class="p-1 border rounded-lg bg-white text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-300">
+                                <option value="">-- Kategori --</option>
+                                <option value="verb">Verbo (Verb)</option>
+                                <option value="sustantivo">Sustantivo (Substantiv)</option>
+                                <option value="adjetivo">Adjetivo (Adjektiv)</option>
+                                <option value="tiempo">Tiempo / Conector</option>
+                            </select>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button onclick="checkWordSorter('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta alla 16</button>
+                    <button onclick="toggleHint('hintSort')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp / Facit</button>
+                </div>
+
+                <p id="hintSort" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                    <b>Facit på alla 16 ord:</b><br>
+                    • Verbos: comprender, aprender, esperar, decidir<br>
+                    • Sustantivos: el viaje, la pregunta, el problema, la respuesta<br>
+                    • Adjetivos: importante, tranquilo, diferente, peligroso<br>
+                    • Tiempo: pronto, mientras, finalmente, todavía
+                </p>
+                <p id="sortRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function checkWordSorter(taskId, points) {
+            const answers = ["verb", "sustantivo", "adjetivo", "tiempo", "verb", "sustantivo", "adjetivo", "tiempo", "verb", "sustantivo", "adjetivo", "tiempo", "verb", "sustantivo", "adjetivo", "tiempo"];
+            let correct = true;
+
+            for (let i = 0; i < answers.length; i++) {
+                const val = document.getElementById(`sortCat_${i}`).value;
+                if (val !== answers[i]) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('sortRes');
+                res.innerText = "Några kategorival blev fel. Klicka på '💡 Hjälp / Facit' för att kontrollera!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟢 GRÖN 3: Juego de Memoria (8 PAR = 16 KORT)
+        let memoryCards = [];
+        let flippedIndices = [];
+        let matchedPairs = 0;
+
+        function renderMemoryGame(container, task) {
+            const memoryWords = [
+                { es: "comprender", sv: "förstå" },
+                { es: "aprender", sv: "lära sig" },
+                { es: "el viaje", sv: "resan" },
+                { es: "la pregunta", sv: "frågan" },
+                { es: "importante", sv: "viktig" },
+                { es: "peligroso", sv: "farlig" },
+                { es: "pronto", sv: "snart" },
+                { es: "mientras", sv: "medan" }
+            ];
+
+            memoryCards = [];
+            memoryWords.forEach((item, idx) => {
+                memoryCards.push({ id: idx, text: item.es, lang: 'es' });
+                memoryCards.push({ id: idx, text: item.sv, lang: 'sv' });
+            });
+            memoryCards.sort(() => Math.random() - 0.5);
+
+            flippedIndices = [];
+            matchedPairs = 0;
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Klicka på korten för att hitta alla 8 paren mellan spanska och svenska:</p>
+                
+                <div id="memoryGrid" class="grid grid-cols-4 gap-2 text-xs font-bold mb-3">
+                    ${memoryCards.map((card, idx) => `
+                        <button onclick="flipMemoryCard(${idx})" id="memCard_${idx}" class="h-14 bg-indigo-800 text-white rounded-xl shadow transition transform flex items-center justify-center p-1 text-center">
+                            <i class="fa-solid fa-question text-indigo-300"></i>
+                        </button>
+                    `).join('')}
+                </div>
+
+                <div class="flex gap-2 mt-2">
+                    <button onclick="toggleHint('hintMem')" class="w-full py-2 bg-amber-100 text-amber-800 font-bold rounded-xl text-xs hover:bg-amber-200 transition">💡 Hjälp / Facit på paren</button>
+                </div>
+
+                <p id="hintMem" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden mt-2 leading-relaxed">
+                    <b>De 8 paren i spelet:</b><br>
+                    • comprender = förstå | aprender = lära sig | el viaje = resan | la pregunta = frågan<br>
+                    • importante = viktig | peligroso = farlig | pronto = snart | mientras = medan
+                </p>
+            `;
+        }
+
+        function flipMemoryCard(idx) {
+            if (flippedIndices.length >= 2 || flippedIndices.includes(idx)) return;
+            const btn = document.getElementById(`memCard_${idx}`);
+            btn.innerText = memoryCards[idx].text;
+            btn.className = "h-14 bg-amber-100 text-indigo-900 border-2 border-amber-400 rounded-xl shadow transition transform flex items-center justify-center p-1 text-center font-bold text-[11px]";
+            
+            flippedIndices.push(idx);
+
+            if (flippedIndices.length === 2) {
+                const [i1, i2] = flippedIndices;
+                if (memoryCards[i1].id === memoryCards[i2].id && memoryCards[i1].lang !== memoryCards[i2].lang) {
+                    matchedPairs++;
+                    document.getElementById(`memCard_${i1}`).className = "h-14 bg-emerald-500 text-white rounded-xl shadow flex items-center justify-center p-1 text-center font-bold text-[11px] opacity-80 cursor-default";
+                    document.getElementById(`memCard_${i2}`).className = "h-14 bg-emerald-500 text-white rounded-xl shadow flex items-center justify-center p-1 text-center font-bold text-[11px] opacity-80 cursor-default";
+                    flippedIndices = [];
+
+                    if (matchedPairs === 8) {
+                        setTimeout(() => {
+                            completeTask('task3', tasks.find(t => t.id === 'task3').points);
+                        }, 500);
+                    }
+                } else {
+                    setTimeout(() => {
+                        [i1, i2].forEach(i => {
+                            const b = document.getElementById(`memCard_${i}`);
+                            if (b) {
+                                b.className = "h-14 bg-indigo-800 text-white rounded-xl shadow transition transform flex items-center justify-center p-1 text-center";
+                                b.innerHTML = `<i class="fa-solid fa-question text-indigo-300"></i>`;
+                            }
+                        });
+                        flippedIndices = [];
+                    }, 900);
+                }
+            }
+        }
+
+        // 🟢 GRÖN 4: Prueba de Recuerdo (10 ORD)
+        function renderQuickQuiz(container, task) {
+            const quizWords = [
+                { es: "comprender", sv: "förstå" },
+                { es: "el viaje", sv: "resan" },
+                { es: "importante", sv: "viktig" },
+                { es: "pronto", sv: "snart" },
+                { es: "el problema", sv: "problemet" },
+                { es: "escribir", sv: "skriva" },
+                { es: "la solución", sv: "lösningen" },
+                { es: "tranquilo", sv: "lugn / stilla" },
+                { es: "a menudo", sv: "ofta" },
+                { es: "decidir", sv: "bestämma" }
+            ];
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Skriv den svenska översättningen för alla 10 glosor:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    ${quizWords.map((q, i) => `
+                        <div class="flex items-center justify-between p-1.5 bg-slate-50 rounded border">
+                            <span>${i+1}. <b>${q.es}</b></span> 
+                            <input type="text" id="qz_${i}" placeholder="..." class="p-1 border rounded w-28">
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button onclick="checkQuickQuiz('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">Rätta alla 10</button>
+                    <button onclick="toggleHint('hintQz')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp / Facit</button>
+                </div>
+
+                <p id="hintQz" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                    <b>Facit:</b> 1. förstå | 2. resan | 3. viktig | 4. snart | 5. problemet | 6. skriva | 7. lösningen | 8. lugn / stilla | 9. ofta | 10. bestämma
+                </p>
+                <p id="qzRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function checkQuickQuiz(taskId, points) {
+            const keys = ['forsta', 'resa', 'viktig', 'snart', 'problem', 'skriva', 'losning', 'lugn', 'ofta', 'bestamma'];
+            let correct = true;
+
+            for (let i = 0; i < 10; i++) {
+                const val = norm(document.getElementById(`qz_${i}`).value);
+                if (!val.includes(keys[i])) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('qzRes');
+                res.innerText = "Något svar blev fel. Klicka på '💡 Hjälp / Facit' för att kontrollera!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 5: Lucktext i meningar (8 ORD)
+        function renderContextGapfill(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Fyll i rätt spansk glosa i alla 8 meningar:</p>
+                <div class="space-y-2 text-xs">
+                    <div>1. Es muy ________ (viktigt) estudiar cada día. <input type="text" id="gap0" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>2. Quiero ________ (lära mig) más español. <input type="text" id="gap1" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>3. El próximo mes voy a hacer un ________ (resa). <input type="text" id="gap2" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>4. No puedo encontrar la ________ (lösningen) al problema. <input type="text" id="gap3" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>5. Voy a ________ (skriva) un mensaje a mi amigo. <input type="text" id="gap4" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>6. Tenemos que ________ (bestämma) ahora mismo. <input type="text" id="gap5" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>7. El profesor va a responder a la ________ (frågan). <input type="text" id="gap6" class="p-1 border rounded w-32 ml-2"></div>
+                    <div>8. Vamos a llegar ________ (snart) a la casa. <input type="text" id="gap7" class="p-1 border rounded w-32 ml-2"></div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="checkContextGapfill('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition">Rätta alla 8</button>
+                        <button onclick="toggleHint('hintGap')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp / Facit</button>
+                    </div>
+
+                    <p id="hintGap" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                        <b>Rätta orden i ordning:</b> 1. importante | 2. aprender | 3. viaje | 4. solución | 5. escribir | 6. decidir | 7. pregunta | 8. pronto
+                    </p>
+                    <p id="gapRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkContextGapfill(taskId, points) {
+            const answers = ['importante', 'aprender', 'viaje', 'solucion', 'escribir', 'decidir', 'pregunta', 'pronto'];
+            let correct = true;
+
+            for (let i = 0; i < 8; i++) {
+                const val = norm(document.getElementById(`gap${i}`).value);
+                if (!val.includes(answers[i])) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('gapRes');
+                res.innerText = "Något ord stämmer inte. Klicka på '💡 Hjälp / Facit' för att se de rätta orden!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 6: Motsatser & Ordpar (6 ORD)
+        function renderSynonymsAntonyms(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Skriv motsatsen eller svarsparet på spanska till följande 6 ord:</p>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between items-center"><span>1. posible (möjlig) -> </span> <input type="text" id="sa0" placeholder="omöjlig..." class="p-1 border rounded w-36"></div>
+                    <div class="flex justify-between items-center"><span>2. la pregunta (frågan) -> </span> <input type="text" id="sa1" placeholder="svaret..." class="p-1 border rounded w-36"></div>
+                    <div class="flex justify-between items-center"><span>3. empezar (börja) -> </span> <input type="text" id="sa2" placeholder="sluta / avsluta..." class="p-1 border rounded w-36"></div>
+                    <div class="flex justify-between items-center"><span>4. el problema (problemet) -> </span> <input type="text" id="sa3" placeholder="lösningen..." class="p-1 border rounded w-36"></div>
+                    <div class="flex justify-between items-center"><span>5. peligroso (farlig) -> </span> <input type="text" id="sa4" placeholder="säker / trygg..." class="p-1 border rounded w-36"></div>
+                    <div class="flex justify-between items-center"><span>6. llegar (anlända) -> </span> <input type="text" id="sa5" placeholder="gå ut / resa iväg..." class="p-1 border rounded w-36"></div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="checkSynonymsAntonyms('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition">Rätta motsatser</button>
+                        <button onclick="toggleHint('hintSA')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp / Facit</button>
+                    </div>
+
+                    <p id="hintSA" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                        <b>Facit:</b> 1. imposible | 2. la respuesta (eller respuesta) | 3. terminar | 4. la solución (eller solución) | 5. seguro | 6. salir
+                    </p>
+                    <p id="saRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkSynonymsAntonyms(taskId, points) {
+            const ans = ['imposible', 'respuesta', 'terminar', 'solucion', 'seguro', 'salir'];
+            let correct = true;
+
+            for (let i = 0; i < 6; i++) {
+                const val = norm(document.getElementById(`sa${i}`).value);
+                if (!val.includes(ans[i])) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('saRes');
+                res.innerText = "Kolla i facit om du behöver hjälp med stavningen!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 7: FLERVALSLUCKTEXT (8 FRÅGOR)
+        function renderMultipleChoiceGapfill(container, task) {
+            const mcQuestions = [
+                { q: "1. Necesito ___ las instrucciones antes de empezar.", opts: ["comprender", "viaje", "rápido", "a menudo"], correct: 0 },
+                { q: "2. Mañana voy a hacer un ___ con mis amigos.", opts: ["respuesta", "viaje", "seguro", "mientras"], correct: 1 },
+                { q: "3. Es una decisión muy ___ para mi futuro.", opts: ["tranquilo", "importante", "luego", "enseguida"], correct: 1 },
+                { q: "4. No es seguro ir allí, es muy ___.", opts: ["peligroso", "útil", "pensar", "todavía"], correct: 0 },
+                { q: "5. Nos vemos ___ en el restaurante.", opts: ["problema", "pronto", "preguntar", "fácil"], correct: 1 },
+                { q: "6. Trabajo en el proyecto ___ escucho música.", opts: ["mientras", "llegar", "verdad", "peligro"], correct: 0 },
+                { q: "7. El profesor siempre busca una ___ rápida.", opts: ["solución", "esperar", "tranquilo", "anteayer"], correct: 0 },
+                { q: "8. No sé la respuesta, voy a ___ una solución.", opts: ["buscar", "salud", "diferente", "luego"], correct: 0 }
+            ];
+
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Välj rätt spansk glosa som passar i varje mening (8 frågor):</p>
+                
+                <div class="space-y-3 text-xs">
+                    ${mcQuestions.map((item, idx) => `
+                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <p class="font-bold text-slate-800 mb-1.5">${item.q}</p>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                ${item.opts.map((opt, oIdx) => `
+                                    <label class="flex items-center gap-1.5 p-1.5 bg-white rounded border border-slate-200 cursor-pointer hover:bg-indigo-50">
+                                        <input type="radio" name="mc_${idx}" value="${oIdx}">
+                                        <span>${opt}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button onclick="checkMultipleChoice('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition">Rätta flervalsfrågorna</button>
+                    <button onclick="toggleHint('hintMC')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp / Facit</button>
+                </div>
+
+                <p id="hintMC" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                    <b>Rätta svar:</b><br>
+                    1. comprender | 2. viaje | 3. importante | 4. peligroso | 5. pronto | 6. mientras | 7. solución | 8. buscar
+                </p>
+                <p id="mcRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+            `;
+        }
+
+        function checkMultipleChoice(taskId, points) {
+            const correctOpts = [0, 1, 1, 0, 1, 0, 0, 0];
+            let allCorrect = true;
+
+            for (let i = 0; i < 8; i++) {
+                const selected = document.querySelector(`input[name="mc_${i}"]:checked`);
+                if (!selected || parseInt(selected.value) !== correctOpts[i]) {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            if (allCorrect) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('mcRes');
+                res.innerText = "Några svar blev fel eller så missade du någon fråga. Klicka på '💡 Hjälp / Facit' för facit!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🟡 GUL 8: Skriv 5 korta meningar
+        function renderWriteSentences(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Skriv 5 korta meningar på spanska där du använder följande ord:</p>
+                
+                <div class="space-y-2 text-xs">
+                    <div><b>1. aprender</b> (lära sig): <input type="text" id="w_0" placeholder="T.ex: Quiero aprender español..." class="w-full p-1.5 border rounded mt-1"></div>
+                    <div><b>2. el viaje</b> (resan): <input type="text" id="w_1" placeholder="T.ex: El viaje es muy divertido..." class="w-full p-1.5 border rounded mt-1"></div>
+                    <div><b>3. importante</b> (viktig): <input type="text" id="w_2" placeholder="T.ex: Es muy importante estudiar..." class="w-full p-1.5 border rounded mt-1"></div>
+                    <div><b>4. pronto</b> (snart): <input type="text" id="w_3" placeholder="T.ex: Voy a salir pronto..." class="w-full p-1.5 border rounded mt-1"></div>
+                    <div><b>5. el problema</b> (problemet): <input type="text" id="w_4" placeholder="T.ex: No tengo ningún problema..." class="w-full p-1.5 border rounded mt-1"></div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="checkWriteSentences('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition">Godkänn alla 5 meningar</button>
+                        <button onclick="toggleHint('hintW')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Exempel</button>
+                    </div>
+
+                    <p id="hintW" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                        <b>Exempelmeningar du kan skriva av/använda:</b><br>
+                        1. <i>Me gusta aprender lenguas.</i><br>
+                        2. <i>El viaje a España es fantástico.</i><br>
+                        3. <i>Es importante comer bien.</i><br>
+                        4. <i>Vamos a llegar pronto.</i><br>
+                        5. <i>Tengo un problema difícil.</i>
+                    </p>
+                    <p id="wRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkWriteSentences(taskId, points) {
+            const targets = ['aprender', 'viaje', 'importante', 'pronto', 'problema'];
+            let correct = true;
+
+            for (let i = 0; i < 5; i++) {
+                const val = norm(document.getElementById(`w_${i}`).value);
+                if (!val.includes(targets[i]) || val.split(/\s+/).length < 3) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('wRes');
+                res.innerText = "Kom ihåg att ha med det givna ordet i varje mening och skriv minst 3 ord per mening!";
+                res.classList.remove('hidden');
+            }
+        }
+
+        // 🔴 RÖD 9: Snabbduellen (10 ORD PÅ TID)
+        let speedTimer = null;
+        let speedTimeLeft = 60;
+        let speedScore = 0;
+        let speedCurrentWordIndex = 0;
+        let speedQuizActive = false;
+
+        function renderSpeedChallenge(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Klara 10 glosöversättningar på 60 sekunder! (Du har en hjälpknapp om det kniper).</p>
+                
+                <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl text-center space-y-3">
+                    <div class="flex justify-between items-center text-sm font-black text-indigo-900">
+                        <span><i class="fa-solid fa-clock text-rose-500"></i> Tid: <span id="speedTimer">60</span>s</span>
+                        <span>Poäng: <span id="speedScore">0</span> / 10</span>
+                    </div>
+
+                    <div id="speedQuizBox" class="py-4">
+                        <span id="speedTargetWord" class="text-2xl font-black text-indigo-900 block mb-2">Tryck på start!</span>
+                        <input type="text" id="speedAnswer" placeholder="Skriv svensk översättning..." disabled class="w-full p-2.5 border rounded-xl text-xs text-center outline-none focus:ring-2 focus:ring-rose-300 mb-3">
+                        <button id="speedStartBtn" onclick="startSpeedQuiz()" class="w-full py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">▶ Starta spelet</button>
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="toggleHint('hintSpeed')" class="w-full py-2 bg-amber-100 text-amber-800 font-bold rounded-xl text-xs hover:bg-amber-200 transition">💡 Hjälp / Facit för spelet</button>
+                    </div>
+
+                    <p id="hintSpeed" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden text-left leading-relaxed">
+                        <b>Svar i ordning:</b><br>
+                        1. comprender = förstå | 2. aprender = lära sig | 3. escribir = skriva | 4. escuchar = lyssna | 5. el viaje = resan | 6. la pregunta = frågan | 7. importante = viktig | 8. pronto = snart | 9. el problema = problemet | 10. tranquilo = lugn
+                    </p>
+                </div>
+            `;
+        }
+
+        function startSpeedQuiz() {
+            speedTimeLeft = 60;
+            speedScore = 0;
+            speedCurrentWordIndex = 0;
+            speedQuizActive = true;
+
+            document.getElementById('speedStartBtn').style.display = 'none';
+            const input = document.getElementById('speedAnswer');
+            input.disabled = false;
+            input.focus();
+
+            input.onkeyup = (e) => {
+                if (e.key === 'Enter') checkSpeedAnswer();
+            };
+
+            nextSpeedWord();
+
+            speedTimer = setInterval(() => {
+                speedTimeLeft--;
+                document.getElementById('speedTimer').innerText = speedTimeLeft;
+
+                if (speedTimeLeft <= 0) {
+                    clearInterval(speedTimer);
+                    endSpeedQuiz();
+                }
+            }, 1000);
+        }
+
+        function nextSpeedWord() {
+            if (speedCurrentWordIndex >= vocabList.length) {
+                speedCurrentWordIndex = 0;
+            }
+            const word = vocabList[speedCurrentWordIndex];
+            document.getElementById('speedTargetWord').innerText = word.es;
+            document.getElementById('speedAnswer').value = '';
+        }
+
+        function checkSpeedAnswer() {
+            if (!speedQuizActive) return;
+            const input = document.getElementById('speedAnswer');
+            const userAns = norm(input.value);
+            const target = vocabList[speedCurrentWordIndex];
+            const correctAns = norm(target.sv);
+
+            if (userAns && (correctAns.includes(userAns) || userAns.includes(correctAns.split('/')[0].trim()))) {
+                speedScore++;
+                document.getElementById('speedScore').innerText = speedScore;
+            }
+
+            speedCurrentWordIndex++;
+            if (speedScore >= 10) {
+                clearInterval(speedTimer);
+                endSpeedQuiz(true);
+            } else {
+                nextSpeedWord();
+            }
+        }
+
+        function endSpeedQuiz(win = false) {
+            speedQuizActive = false;
+            const box = document.getElementById('speedQuizBox');
+            if (win || speedScore >= 10) {
+                box.innerHTML = `<p class="text-emerald-700 font-bold text-sm">¡Bra jobbat! Du klarade alla ${speedScore} glosor!</p>`;
+                setTimeout(() => completeTask('task9', tasks.find(t => t.id === 'task9').points), 1000);
+            } else {
+                box.innerHTML = `
+                    <p class="text-rose-600 font-bold text-sm mb-2">Du fick ${speedScore} av 10 rätt.</p>
+                    <button onclick="openTask('task9')" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs">Försök igen</button>
+                `;
+            }
+        }
+
+        // 🔴 RÖD 10: Min korta text (60 ord)
+        function renderWriteFullText(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-2">Skriv en kort text (<b>minst 60 ord</b>). Du måste ha med <b>minst 6 av dessa A2-glosor</b>:</p>
+
+                <div class="bg-indigo-50 border border-indigo-200 p-2.5 rounded-xl text-xs text-indigo-900 mb-3 flex flex-wrap gap-1.5 font-bold">
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">comprender</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">aprender</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">el viaje</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">importante</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">pronto</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">decidir</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">el problema</span>
+                    <span class="bg-indigo-200 px-2 py-0.5 rounded">mientras</span>
+                </div>
+
+                <textarea id="fullText" rows="6" oninput="countWords('fullText', 'textCounter')" placeholder="Es muy importante aprender español..." class="w-full p-3 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-rose-300"></textarea>
+
+                <div class="flex justify-between items-center text-xs mt-1 mb-3">
+                    <span id="textCounter" class="font-bold text-indigo-700">0 / 60 ord</span>
+                    <button onclick="toggleHint('hintText')" class="text-rose-700 font-bold hover:underline">💡 Exempeltext</button>
+                </div>
+
+                <p id="hintText" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden mb-3 leading-relaxed">
+                    <b>Exempel på färdig text (skriv gärna en egen variant):</b><br>
+                    <i>Es muy importante aprender cosas nuevas en la escuela. Pronto voy a hacer un viaje fantástico a España con mi familia. Queremos decidir el lugar mañana. Mientras espero el viaje, estudio mucho para comprender a la gente. No hay ningún problema y estoy muy contento.</i>
+                </p>
+
+                <button onclick="checkWriteFullText('${task.id}', ${task.points})" class="w-full py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">Lämna in min text</button>
+                <div id="fullTextRes" class="text-xs font-bold text-rose-600 text-center hidden mt-2 p-2 bg-rose-50 rounded-lg border border-rose-200"></div>
+            `;
+        }
+
+        function checkWriteFullText(taskId, points) {
+            const txt = norm(document.getElementById('fullText').value);
+            const words = txt ? txt.split(/\s+/).length : 0;
+
+            const targets = ['comprender', 'aprender', 'viaje', 'importante', 'pronto', 'decidir', 'problema', 'mientras'];
+            let found = 0;
+            targets.forEach(t => { if (txt.includes(t)) found++; });
+
+            const res = document.getElementById('fullTextRes');
+
+            if (words < 60) {
+                res.innerHTML = `Din text har endast <b>${words} ord</b>. Skriv lite mer för att nå minst 60 ord!`;
+                res.classList.remove('hidden');
+            } else if (found < 6) {
+                res.innerHTML = `Du har skrivit ${words} ord (Bra!), men du behöver ha med minst 6 av orden i listan ovan (Just nu hittades: ${found}/6).`;
+                res.classList.remove('hidden');
+            } else {
+                completeTask(taskId, points);
+            }
+        }
+
+        // 🔴 RÖD 11: ÖVERSÄTTNINGSUTMANING (SVENSKA ➔ SPANSKA)
+        function renderTranslationChallenge(container, task) {
+            container.innerHTML = `
+                <p class="text-sm text-slate-600 mb-3">Översätt följande 5 svenska meningar till spanska:</p>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <p class="font-bold text-indigo-900 mb-1">1. Det är mycket viktigt att lära sig.</p>
+                        <input type="text" id="tr_0" placeholder="Es muy importante..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-indigo-900 mb-1">2. Jag vill göra en resa snart.</p>
+                        <input type="text" id="tr_1" placeholder="Quiero hacer un..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-indigo-900 mb-1">3. Vi måste bestämma nu.</p>
+                        <input type="text" id="tr_2" placeholder="Tenemos que decidir..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-indigo-900 mb-1">4. Jag förstår frågan.</p>
+                        <input type="text" id="tr_3" placeholder="Comprendo la..." class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <p class="font-bold text-indigo-900 mb-1">5. Det finns ingen lösning.</p>
+                        <input type="text" id="tr_4" placeholder="No hay solución..." class="w-full p-2 border rounded">
+                    </div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="checkTranslationChallenge('${task.id}', ${task.points})" class="flex-1 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">Rätta översättningarna</button>
+                        <button onclick="toggleHint('hintTr')" class="px-3 py-2.5 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition">💡 Hjälp / Facit</button>
+                    </div>
+
+                    <p id="hintTr" class="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-amber-900 hidden leading-relaxed">
+                        <b>Facit / Exempelsvar:</b><br>
+                        1. <i>Es muy importante aprender.</i><br>
+                        2. <i>Quiero hacer un viaje pronto.</i><br>
+                        3. <i>Tenemos que decidir ahora.</i><br>
+                        4. <i>Comprendo la pregunta.</i> (eller <i>Entiendo la pregunta.</i>)<br>
+                        5. <i>No hay solución.</i> (eller <i>No hay ninguna solución.</i>)
+                    </p>
+                    <p id="trRes" class="text-xs font-bold text-rose-600 text-center hidden mt-1"></p>
+                </div>
+            `;
+        }
+
+        function checkTranslationChallenge(taskId, points) {
+            const keys = [
+                ['importante', 'aprender'],
+                ['viaje', 'pronto'],
+                ['decidir', 'ahora'],
+                ['comprendo', 'pregunta'],
+                ['no hay', 'solucion']
+            ];
+
+            let correct = true;
+            for (let i = 0; i < 5; i++) {
+                const val = norm(document.getElementById(`tr_${i}`).value);
+                const req1 = keys[i][0];
+                const req2 = keys[i][1];
+
+                if (!val.includes(req1) || !val.includes(req2)) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+                completeTask(taskId, points);
+            } else {
+                const res = document.getElementById('trRes');
+                res.innerText = "Kolla i '💡 Hjälp / Facit' om du vill se hur meningarna skrivs på spanska!";
+                res.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
